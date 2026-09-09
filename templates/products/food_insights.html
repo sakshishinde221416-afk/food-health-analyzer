@@ -17,12 +17,14 @@
     <!-- Chart.js CDN -->
     <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
 
-    <!-- PWA & Mobile Meta Tags -->
+    <!-- Favicon & PWA Icons -->
+    <link rel="shortcut icon" type="image/png" href="{% static 'images/favicon.png' %}">
+    <link rel="icon" type="image/x-icon" href="{% static 'images/favicon.ico' %}">
     <meta name="theme-color" content="#0066cc">
     <meta name="mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-    <meta name="apple-mobile-web-app-title" content="BiteCheck AI">
+    <meta name="apple-mobile-web-app-title" content="Food Health Analyzer">
     <link rel="manifest" href="{% static 'manifest.json' %}">
     <link rel="apple-touch-icon" href="{% static 'icons/icon-192.png' %}">
 
@@ -35,10 +37,8 @@
         <!-- Navigation Header -->
         <nav class="bg-white/90 backdrop-blur-md border border-slate-200/80 rounded-2xl px-6 py-3.5 mb-8 shadow-sm flex items-center justify-between flex-wrap gap-4">
             <a href="{% url 'dashboard' %}" class="flex items-center gap-2.5 group text-decoration-none">
-                <div class="w-9 h-9 rounded-xl bg-gradient-to-tr from-sky-600 to-emerald-500 flex items-center justify-center text-white text-lg shadow-md shadow-sky-500/20 group-hover:scale-105 transition-transform">
-                    🥗
-                </div>
-                <span class="text-xl font-black text-slate-900 tracking-tight">BiteCheck <span class="text-sky-600">AI</span></span>
+                <img src="{% static 'images/favicon.png' %}" alt="Food Health Analyzer Logo" class="w-8 h-8 md:w-9 md:h-9 rounded-xl object-contain shadow-md shadow-sky-500/20 group-hover:scale-105 transition-transform">
+                <span class="text-lg md:text-xl font-black text-slate-900 tracking-tight">Food Health <span class="text-sky-600">Analyzer</span></span>
             </a>
             <div class="nav-links">
                 <a href="{% url 'dashboard' %}" class="nav-link">Dashboard</a>

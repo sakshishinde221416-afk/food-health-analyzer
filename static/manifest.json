@@ -1,6 +1,6 @@
 {
-  "name": "BiteCheck AI - Food Health Intelligence",
-  "short_name": "BiteCheck AI",
+  "name": "Food Health Analyzer - Smart AI Nutrition",
+  "short_name": "Food Health Analyzer",
   "description": "Scan packaged food products and understand their ingredients, nutrition, and possible health impact using AI.",
   "start_url": "/",
   "display": "standalone",

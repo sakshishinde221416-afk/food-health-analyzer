@@ -5,7 +5,11 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="theme-color" content="#10b981">
-    <title>You're Offline - BiteCheck AI</title>
+    <title>You're Offline - Food Health Analyzer</title>
+
+    <!-- Favicon & PWA Icons -->
+    <link rel="shortcut icon" type="image/png" href="{% static 'images/favicon.png' %}">
+    <link rel="icon" type="image/x-icon" href="{% static 'images/favicon.ico' %}">
 
     <!-- Google Fonts -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -20,7 +24,10 @@
     <div class="container">
         <!-- Navigation Header -->
         <nav class="nav-bar">
-            <a href="{% if user.is_authenticated %}{% url 'dashboard' %}{% else %}{% url 'home' %}{% endif %}" class="nav-brand">BiteCheck AI</a>
+            <a href="{% if user.is_authenticated %}{% url 'dashboard' %}{% else %}{% url 'home' %}{% endif %}" class="nav-brand" style="display: flex; align-items: center; gap: 8px; text-decoration: none;">
+                <img src="{% static 'images/favicon.png' %}" alt="Food Health Analyzer Logo" style="width: 32px; height: 32px; object-fit: contain;">
+                <span>Food Health Analyzer</span>
+            </a>
         </nav>
 
         <!-- Offline Container Card -->
