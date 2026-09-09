@@ -1,6 +1,6 @@
 {
-  "name": "Food Health Analyzer - Smart AI Nutrition",
-  "short_name": "Food Health Analyzer",
+  "name": "CheckBite AI - Smart Food & Health Intelligence",
+  "short_name": "CheckBite AI",
   "description": "Scan packaged food products and understand their ingredients, nutrition, and possible health impact using AI.",
   "start_url": "/",
   "display": "standalone",

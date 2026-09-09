@@ -1,6 +1,6 @@
-# BiteCheck AI - Food Health Analyzer
+# CheckBite AI
 
-**BiteCheck AI** is a modern, student-friendly Django web application designed to help users decode packaged food products by scanning barcodes or searching by product name. Powered by **Google Gemini 2.5 AI** and the **Open Food Facts API**, BiteCheck AI analyzes ingredients, macronutrients, and allergen warnings to provide personalized, educational health insights.
+**CheckBite AI** is a modern, student-friendly Django web application designed to help users decode packaged food products by scanning barcodes or searching by product name. Powered by **Google Gemini 2.5 AI** and the **Open Food Facts API**, CheckBite AI analyzes ingredients, macronutrients, and allergen warnings to provide personalized, educational health insights.
 
 ---
 
@@ -99,7 +99,7 @@ Open your browser and navigate to **[http://127.0.0.1:8000/](http://127.0.0.1:80
 
 ## 🔒 Security & Medical Disclaimer
 
-- **Educational Purpose Only**: BiteCheck AI provides general nutrition information and does not provide medical diagnoses or replace professional medical advice.
+- **Educational Purpose Only**: CheckBite AI provides general nutrition information and does not provide medical diagnoses or replace professional medical advice.
 - **Secrets Management**: Secrets, API keys, and database passwords are loaded exclusively from environment variables (`.env`) and are ignored by Git.
 
 ---

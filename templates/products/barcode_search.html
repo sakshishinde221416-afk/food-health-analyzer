@@ -4,7 +4,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>BiteCheck AI - Barcode Scanner & Health Analysis</title>
+    <title>CheckBite AI - Barcode Scanner & Health Analysis</title>
 
     <!-- Google Fonts -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -30,7 +30,7 @@
     <meta name="mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-    <meta name="apple-mobile-web-app-title" content="Food Health Analyzer">
+    <meta name="apple-mobile-web-app-title" content="CheckBite AI">
     <link rel="manifest" href="{% static 'manifest.json' %}">
     <link rel="apple-touch-icon" href="{% static 'icons/icon-192.png' %}">
 </head>
@@ -40,8 +40,8 @@
         <!-- Navigation Header -->
         <nav class="bg-white/90 backdrop-blur-md border border-slate-200/80 rounded-2xl px-6 py-3.5 mb-8 shadow-sm flex items-center justify-between flex-wrap gap-4">
             <a href="{% if user.is_authenticated %}{% url 'dashboard' %}{% else %}{% url 'home' %}{% endif %}" class="flex items-center gap-2.5 group text-decoration-none">
-                <img src="{% static 'images/favicon.png' %}" alt="Food Health Analyzer Logo" class="w-8 h-8 md:w-9 md:h-9 rounded-xl object-contain shadow-md shadow-sky-500/20 group-hover:scale-105 transition-transform">
-                <span class="text-lg md:text-xl font-black text-slate-900 tracking-tight">Food Health <span class="text-sky-600">Analyzer</span></span>
+                <img src="{% static 'images/favicon.png' %}" alt="CheckBite AI Logo" class="w-8 h-8 md:w-9 md:h-9 rounded-xl object-contain shadow-md shadow-sky-500/20 group-hover:scale-105 transition-transform">
+                <span class="text-lg md:text-xl font-black text-slate-900 tracking-tight">CheckBite <span class="text-sky-600">AI</span></span>
             </a>
             <div class="nav-links">
                 {% if user.is_authenticated %}
@@ -63,7 +63,7 @@
 
         <!-- App Header -->
         <header class="app-header">
-            <h1 class="app-title">BiteCheck AI</h1>
+            <h1 class="app-title">CheckBite AI</h1>
             <p class="app-subtitle">Scan or enter a food product barcode to view ingredients, nutrition, and AI health impact analysis.</p>
         </header>
 
@@ -296,7 +296,7 @@
                         <div class="w-8 h-8 rounded-xl bg-gradient-to-tr from-sky-600 to-emerald-500 flex items-center justify-center text-white text-base font-black shadow-md shadow-sky-500/20">
                             🥗
                         </div>
-                        <span class="text-xl font-black text-slate-900 tracking-tight">BiteCheck <span class="text-sky-600">AI</span></span>
+                        <span class="text-xl font-black text-slate-900 tracking-tight">CheckBite <span class="text-sky-600">AI</span></span>
                     </div>
                     <p class="text-xs text-slate-500 leading-relaxed mb-4">
                         Smart AI-powered packaged food analyzer. Decode ingredients, check nutrition, detect allergens, and make informed food choices.
@@ -333,7 +333,7 @@
                 <div>
                     <h4 class="text-xs font-bold text-slate-900 uppercase tracking-wider mb-4">Medical Disclaimer</h4>
                     <p class="text-xs text-slate-500 leading-relaxed mb-3">
-                        BiteCheck AI provides educational nutrition information only. It is not intended to diagnose, treat, or replace professional medical advice.
+                        CheckBite AI provides educational nutrition information only. It is not intended to diagnose, treat, or replace professional medical advice.
                     </p>
                     <p class="text-xs font-semibold text-slate-700">
                         Always check package labels if you have severe allergies.
@@ -342,7 +342,7 @@
             </div>
 
             <div class="flex flex-col sm:flex-row items-center justify-between gap-4 text-xs text-slate-500 font-medium">
-                <p>© 2026 <strong>BiteCheck AI</strong>. Empowering Healthier Dietary Choices Every Day.</p>
+                <p>© 2026 <strong>CheckBite AI</strong>. Empowering Healthier Dietary Choices Every Day.</p>
                 <div class="flex items-center gap-4">
                     <span class="hover:text-slate-800">Privacy Policy</span>
                     <span>•</span>
