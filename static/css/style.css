@@ -1552,3 +1552,299 @@ body {
     color: #0f172a;
     margin-top: 10px;
 }
+
+/* ==========================================================================
+   COMPREHENSIVE MOBILE & TABLET RESPONSIVE STYLES (320px, 375px, 768px, 1024px+)
+   ========================================================================== */
+
+/* Global Overflow & Box Safety */
+html, body {
+    overflow-x: hidden;
+    width: 100%;
+    max-width: 100%;
+}
+
+.full-width {
+    width: 100% !important;
+}
+
+/* Base Body & Card Padding on Small Devices */
+@media (max-width: 640px) {
+    body {
+        padding: 14px 10px;
+    }
+
+    .container, .max-w-5xl {
+        padding-left: 8px !important;
+        padding-right: 8px !important;
+    }
+    
+    .card {
+        padding: 18px 14px;
+        border-radius: 14px;
+    }
+
+    .app-header {
+        margin-bottom: 18px;
+    }
+
+    .auth-card {
+        padding: 20px 16px;
+    }
+}
+
+/* Nav Bar & Nav Links Responsiveness */
+@media (max-width: 768px) {
+    nav, .nav-bar {
+        padding: 10px 14px;
+        gap: 10px;
+        border-radius: 14px;
+    }
+    
+    .nav-links, nav > div:last-child {
+        width: 100%;
+        display: flex;
+        align-items: center;
+        overflow-x: auto;
+        white-space: nowrap;
+        -webkit-overflow-scrolling: touch;
+        padding-bottom: 4px;
+        gap: 4px;
+        scrollbar-width: none;
+    }
+    
+    .nav-links::-webkit-scrollbar, nav > div:last-child::-webkit-scrollbar {
+        display: none;
+    }
+    
+    .nav-link, nav > div:last-child > a {
+        padding: 6px 10px;
+        font-size: 0.82rem;
+        flex-shrink: 0;
+    }
+}
+
+/* Input Groups & Form Action Rows */
+@media (max-width: 640px) {
+    .input-group {
+        flex-direction: column;
+        gap: 10px;
+    }
+
+    .input-group .input-field,
+    .input-group .btn-primary,
+    .input-group .btn-scan,
+    .input-group .btn-secondary {
+        width: 100%;
+    }
+
+    .search-form {
+        gap: 12px;
+    }
+
+    .product-header {
+        flex-direction: column;
+        align-items: stretch;
+        gap: 10px;
+    }
+
+    .product-actions-group {
+        width: 100%;
+        flex-direction: column;
+        align-items: stretch;
+    }
+
+    .btn-favorite, 
+    .btn-reset-scan, 
+    .btn-secondary, 
+    .btn-primary, 
+    .btn-scan, 
+    .btn-view-product, 
+    .btn-danger {
+        width: 100%;
+        justify-content: center;
+        text-align: center;
+    }
+
+    .saved-card-footer, 
+    .history-card-footer,
+    .history-card-header,
+    .saved-card-header {
+        flex-direction: column;
+        align-items: stretch;
+        gap: 10px;
+    }
+
+    .saved-left-actions, 
+    .filter-actions-group,
+    .top-product-actions {
+        width: 100%;
+        flex-direction: column;
+    }
+
+    .filter-bar-grid {
+        flex-direction: column;
+        align-items: stretch;
+    }
+
+    .search-field-wrapper, 
+    .filter-field-group {
+        width: 100%;
+        min-width: 100%;
+    }
+}
+
+/* Grids & Cards Layout */
+.compare-inputs-grid,
+.compare-products-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 16px;
+}
+
+@media (max-width: 640px) {
+    .nutrition-grid {
+        grid-template-columns: repeat(2, 1fr);
+        gap: 8px;
+    }
+
+    .stat-cards-grid {
+        grid-template-columns: repeat(2, 1fr);
+        gap: 10px;
+    }
+
+    .dashboard-grid, 
+    .workflow-grid, 
+    .features-grid, 
+    .insights-charts-grid,
+    .compare-inputs-grid,
+    .compare-products-grid {
+        grid-template-columns: 1fr;
+        gap: 12px;
+    }
+
+    .form-row, 
+    .checkbox-grid {
+        grid-template-columns: 1fr;
+    }
+}
+
+@media (max-width: 380px) {
+    .nutrition-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .stat-cards-grid {
+        grid-template-columns: 1fr;
+    }
+}
+
+/* Camera Scanner Container & Video Bounds */
+.reader-box {
+    width: 100% !important;
+    max-width: 100% !important;
+    overflow: hidden;
+    position: relative;
+}
+
+#reader video, #reader canvas {
+    width: 100% !important;
+    max-width: 100% !important;
+    height: auto !important;
+    object-fit: cover;
+    border-radius: 8px;
+}
+
+/* Chart Canvas Wrappers */
+.chart-wrapper, 
+.chart-bar-container, 
+.chart-doughnut-container {
+    position: relative;
+    width: 100% !important;
+    max-width: 100% !important;
+}
+
+.chart-wrapper canvas, 
+.chart-bar-container canvas, 
+.chart-doughnut-wrapper canvas {
+    max-width: 100% !important;
+}
+
+@media (max-width: 480px) {
+    .chart-wrapper, 
+    .chart-bar-container {
+        height: 200px !important;
+    }
+
+    .chart-doughnut-wrapper {
+        width: 180px !important;
+        height: 180px !important;
+    }
+}
+
+/* Table Responsiveness */
+.table-responsive {
+    width: 100%;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    margin-bottom: 1rem;
+    border-radius: 8px;
+}
+
+.compare-table {
+    width: 100%;
+    min-width: 500px;
+    border-collapse: collapse;
+}
+
+.compare-table th, 
+.compare-table td {
+    padding: 10px 12px;
+    border-bottom: 1px solid var(--card-border);
+    text-align: left;
+    font-size: 0.9rem;
+}
+
+.compare-table th {
+    background-color: #f8fafc;
+    font-weight: 700;
+    color: #0f172a;
+}
+
+/* Heading & Text Scaling */
+.hero-title {
+    font-size: clamp(1.75rem, 5vw, 2.75rem);
+}
+
+.app-title {
+    font-size: clamp(1.4rem, 4vw, 2.25rem);
+}
+
+.product-title {
+    font-size: clamp(1.2rem, 3.5vw, 1.6rem);
+    word-break: break-word;
+    overflow-wrap: break-word;
+}
+
+.auth-title {
+    font-size: clamp(1.3rem, 4vw, 1.85rem);
+}
+
+.section-heading {
+    font-size: clamp(1.1rem, 3.5vw, 1.35rem);
+}
+
+/* Word Wrapping for AI Text & Product Details */
+.ingredients-box, 
+.analysis-summary, 
+.analysis-block, 
+.top-product-name, 
+.history-summary, 
+.saved-product-title,
+.product-name,
+.allergy-alert-body,
+.personalized-note-text {
+    word-break: break-word;
+    overflow-wrap: break-word;
+}
+
