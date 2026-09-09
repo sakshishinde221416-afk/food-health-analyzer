@@ -5,18 +5,23 @@ import time
 from google import genai
 from google.genai import types
 
+# Centralized Gemini AI model priority order for retries & fallback
+GEMINI_MODELS = [
+    "gemini-3.6-flash",
+    "gemini-3.5-flash",
+    "gemini-3.5-flash-lite",
+]
 
-def ask_gemini(prompt, max_retries=2):
+
+def ask_gemini(prompt, max_retries=3):
     """
-    Helper function to query Google Gemini API safely with retries and timeout protection.
+    Helper function to query Google Gemini API safely with retries and model fallbacks.
     """
     api_key = os.getenv("GEMINI_API_KEY", "").strip()
 
     if not api_key or api_key == "PASTE_MY_GEMINI_API_KEY_HERE":
         print("[Gemini Service Error] GEMINI_API_KEY is missing or set to placeholder in environment.")
         return None
-
-    models_to_try = ["gemini-2.5-flash", "gemini-1.5-flash"]
 
     try:
         client = genai.Client(api_key=api_key)
@@ -25,7 +30,7 @@ def ask_gemini(prompt, max_retries=2):
         return None
 
     for attempt in range(1, max_retries + 1):
-        model_name = models_to_try[(attempt - 1) % len(models_to_try)]
+        model_name = GEMINI_MODELS[(attempt - 1) % len(GEMINI_MODELS)]
         try:
             response = client.models.generate_content(
                 model=model_name,
@@ -42,7 +47,7 @@ def ask_gemini(prompt, max_retries=2):
         except Exception as e:
             err_type = type(e).__name__
             err_msg = str(e)[:150]
-            print(f"[Gemini Service Exception Attempt {attempt}/{max_retries}] ({err_type}): {err_msg}")
+            print(f"[Gemini Service Exception Attempt {attempt}/{max_retries}] Model '{model_name}' ({err_type}): {err_msg}")
             if attempt < max_retries:
                 time.sleep(1.0)
 
@@ -53,7 +58,7 @@ def analyze_food_product(product, user_profile=None, max_retries=3):
     """
     Analyzes a Product object using Gemini AI, personalized with user physical metrics,
     health conditions, and food allergies. Returns structured health analysis JSON.
-    Includes automated retries, timeout/error handling, and JSON validation.
+    Includes automated retries, model fallbacks, and JSON validation.
     """
     api_key = os.getenv("GEMINI_API_KEY", "").strip()
 
@@ -143,8 +148,6 @@ EXACT JSON STRUCTURE:
 }}
 """
 
-    models_to_try = ["gemini-2.5-flash", "gemini-1.5-flash"]
-
     try:
         client = genai.Client(api_key=api_key)
     except Exception as init_err:
@@ -152,7 +155,7 @@ EXACT JSON STRUCTURE:
         return None
 
     for attempt in range(1, max_retries + 1):
-        model_name = models_to_try[(attempt - 1) % len(models_to_try)]
+        model_name = GEMINI_MODELS[(attempt - 1) % len(GEMINI_MODELS)]
         print(f"[Gemini Analysis Attempt {attempt}/{max_retries}] Requesting AI analysis with model '{model_name}'...")
 
         try:
@@ -181,14 +184,14 @@ EXACT JSON STRUCTURE:
             try:
                 analysis_data = json.loads(raw_text)
             except json.JSONDecodeError as json_err:
-                print(f"[Gemini Warning Attempt {attempt}/{max_retries}] Invalid JSON response ({type(json_err).__name__}): {json_err}")
+                print(f"[Gemini Warning Attempt {attempt}/{max_retries}] Invalid JSON response from model '{model_name}' ({type(json_err).__name__}): {json_err}")
                 if attempt < max_retries:
                     time.sleep(1.0)
                 continue
 
             # Validate that returned data is a dict
             if not isinstance(analysis_data, dict):
-                print(f"[Gemini Warning Attempt {attempt}/{max_retries}] Response is not a JSON object.")
+                print(f"[Gemini Warning Attempt {attempt}/{max_retries}] Response from model '{model_name}' is not a JSON object.")
                 if attempt < max_retries:
                     time.sleep(1.0)
                 continue
@@ -212,13 +215,13 @@ EXACT JSON STRUCTURE:
                 else:
                     analysis_data["personalized_note"] = "Personalized evaluation completed based on your profile."
 
-            print(f"[Gemini Success] Health analysis generated successfully on attempt {attempt}.")
+            print(f"[Gemini Success] Health analysis generated successfully using '{model_name}' on attempt {attempt}.")
             return analysis_data
 
         except Exception as e:
             err_type = type(e).__name__
             err_msg = str(e)[:150]
-            print(f"[Gemini Analysis Error Attempt {attempt}/{max_retries}] ({err_type}): {err_msg}")
+            print(f"[Gemini Analysis Error Attempt {attempt}/{max_retries}] Model '{model_name}' ({err_type}): {err_msg}")
             if attempt < max_retries:
                 time.sleep(1.0)
 
@@ -309,8 +312,6 @@ CRITICAL INSTRUCTIONS:
 }}
 """
 
-    models_to_try = ["gemini-2.5-flash", "gemini-1.5-flash"]
-
     try:
         client = genai.Client(api_key=api_key)
     except Exception as init_err:
@@ -318,7 +319,7 @@ CRITICAL INSTRUCTIONS:
         return None
 
     for attempt in range(1, max_retries + 1):
-        model_name = models_to_try[(attempt - 1) % len(models_to_try)]
+        model_name = GEMINI_MODELS[(attempt - 1) % len(GEMINI_MODELS)]
         try:
             config = types.GenerateContentConfig(
                 response_mime_type="application/json"
@@ -345,14 +346,14 @@ CRITICAL INSTRUCTIONS:
                 if isinstance(comparison_data, dict):
                     return comparison_data
             except json.JSONDecodeError as json_err:
-                print(f"[Gemini Comparison Warning Attempt {attempt}/{max_retries}] Invalid JSON: {json_err}")
+                print(f"[Gemini Comparison Warning Attempt {attempt}/{max_retries}] Invalid JSON from model '{model_name}': {json_err}")
                 if attempt < max_retries:
                     time.sleep(1.0)
 
         except Exception as e:
             err_type = type(e).__name__
             err_msg = str(e)[:150]
-            print(f"[Gemini Comparison Error Attempt {attempt}/{max_retries}] ({err_type}): {err_msg}")
+            print(f"[Gemini Comparison Error Attempt {attempt}/{max_retries}] Model '{model_name}' ({err_type}): {err_msg}")
             if attempt < max_retries:
                 time.sleep(1.0)
 
@@ -423,8 +424,6 @@ CRITICAL MANDATORY INSTRUCTIONS:
 }}
 """
 
-    models_to_try = ["gemini-2.5-flash", "gemini-1.5-flash"]
-
     try:
         client = genai.Client(api_key=api_key)
     except Exception as init_err:
@@ -432,7 +431,7 @@ CRITICAL MANDATORY INSTRUCTIONS:
         return None
 
     for attempt in range(1, max_retries + 1):
-        model_name = models_to_try[(attempt - 1) % len(models_to_try)]
+        model_name = GEMINI_MODELS[(attempt - 1) % len(GEMINI_MODELS)]
         try:
             config = types.GenerateContentConfig(
                 response_mime_type="application/json"
@@ -459,18 +458,19 @@ CRITICAL MANDATORY INSTRUCTIONS:
                 if isinstance(insights_data, dict):
                     return insights_data
             except json.JSONDecodeError as json_err:
-                print(f"[Gemini Insights Warning Attempt {attempt}/{max_retries}] Invalid JSON: {json_err}")
+                print(f"[Gemini Insights Warning Attempt {attempt}/{max_retries}] Invalid JSON from model '{model_name}': {json_err}")
                 if attempt < max_retries:
                     time.sleep(1.0)
 
         except Exception as e:
             err_type = type(e).__name__
             err_msg = str(e)[:150]
-            print(f"[Gemini Insights Error Attempt {attempt}/{max_retries}] ({err_type}): {err_msg}")
+            print(f"[Gemini Insights Error Attempt {attempt}/{max_retries}] Model '{model_name}' ({err_type}): {err_msg}")
             if attempt < max_retries:
                 time.sleep(1.0)
 
     return None
+
 
 
 
