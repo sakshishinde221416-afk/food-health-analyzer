@@ -239,27 +239,39 @@ document.addEventListener('DOMContentLoaded', () => {
     function resetAnalysisUI() {
         const allergyAlertCard = document.getElementById('allergy-alert-card');
         if (allergyAlertCard) allergyAlertCard.style.display = 'none';
-        if (analysisContainer) analysisContainer.style.display = 'none';
-        if (analysisErrorBox) {
-            analysisErrorBox.style.display = 'none';
-            analysisErrorBox.textContent = '';
+
+        const container = analysisContainer || document.getElementById('analysis-container');
+        if (container) container.style.display = 'none';
+
+        const errBox = analysisErrorBox || document.getElementById('analysis-error-box');
+        if (errBox) {
+            errBox.style.display = 'none';
+            errBox.textContent = '';
         }
-        if (analysisLoadingBox) analysisLoadingBox.style.display = 'none';
-        if (analyzeBtn) {
-            analyzeBtn.disabled = false;
-            analyzeBtn.style.display = 'inline-block';
-            analyzeBtn.textContent = 'Analyze Health Impact with AI';
+
+        const loadBox = analysisLoadingBox || document.getElementById('analysis-loading-box');
+        if (loadBox) loadBox.style.display = 'none';
+
+        const btn = analyzeBtn || document.getElementById('analyze-btn');
+        if (btn) {
+            btn.disabled = false;
+            btn.style.display = 'inline-block';
+            btn.textContent = 'Analyze Health Impact with AI';
         }
     }
 
     function clearUI() {
-        if (errorBox) {
-            errorBox.style.display = 'none';
-            errorBox.textContent = '';
+        const errBox = errorBox || document.getElementById('error-box');
+        if (errBox) {
+            errBox.style.display = 'none';
+            errBox.textContent = '';
         }
-        if (resultCard) {
-            resultCard.style.display = 'none';
+
+        const card = resultCard || document.getElementById('result-card');
+        if (card) {
+            card.style.display = 'none';
         }
+
         destroyNutritionChart();
         resetAnalysisUI();
     }
