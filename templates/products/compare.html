@@ -1,0 +1,551 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Compare Products - BiteCheck AI</title>
+
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+
+    <!-- Chart.js CDN -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+
+    <!-- PWA & Mobile Meta Tags -->
+    <meta name="theme-color" content="#0066cc">
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="BiteCheck AI">
+    <link rel="manifest" href="{% static 'manifest.json' %}">
+    <link rel="apple-touch-icon" href="{% static 'icons/icon-192.png' %}">
+
+    <!-- External CSS -->
+    <link rel="stylesheet" href="{% static 'css/style.css' %}?v=3.0">
+</head>
+<body class="bg-gradient-to-b from-sky-50/70 via-slate-50 to-slate-100 min-h-screen text-slate-900 font-sans antialiased">
+
+    <div class="max-w-5xl mx-auto px-4 py-6">
+        <!-- Navigation Header -->
+        <nav class="bg-white/90 backdrop-blur-md border border-slate-200/80 rounded-2xl px-6 py-3.5 mb-8 shadow-sm flex items-center justify-between flex-wrap gap-4">
+            <a href="{% url 'dashboard' %}" class="flex items-center gap-2.5 group text-decoration-none">
+                <div class="w-9 h-9 rounded-xl bg-gradient-to-tr from-sky-600 to-emerald-500 flex items-center justify-center text-white text-lg shadow-md shadow-sky-500/20 group-hover:scale-105 transition-transform">
+                    🥗
+                </div>
+                <span class="text-xl font-black text-slate-900 tracking-tight">BiteCheck <span class="text-sky-600">AI</span></span>
+            </a>
+            <div class="nav-links">
+                <a href="{% url 'dashboard' %}" class="nav-link">Dashboard</a>
+                <a href="{% url 'barcode_search' %}" class="nav-link">Scan Product</a>
+                <a href="{% url 'compare_products' %}" class="nav-link active">Compare</a>
+                <a href="{% url 'saved_products' %}" class="nav-link">Saved</a>
+                <a href="{% url 'food_insights' %}" class="nav-link">Insights</a>
+                <a href="{% url 'scan_history' %}" class="nav-link">History</a>
+                <a href="{% url 'profile' %}" class="nav-link">Profile</a>
+                <a href="{% url 'logout' %}" class="nav-link btn-logout">Logout ({{ user.username }})</a>
+            </div>
+        </nav>
+
+        <!-- Page Header -->
+        <header class="app-header">
+            <h1 class="app-title">Compare Products</h1>
+            <p class="app-subtitle">Compare two packaged food products side-by-side to understand nutrition and ingredients trade-offs.</p>
+        </header>
+
+        {% if messages %}
+            <div class="messages">
+                {% for message in messages %}
+                    <div class="alert alert-{{ message.tags }}">{{ message }}</div>
+                {% endfor %}
+            </div>
+        {% endif %}
+
+        <!-- Compare Barcode Input Form Card -->
+        <div class="card compare-form-card">
+            <form method="GET" action="{% url 'compare_products' %}" class="compare-form" autocomplete="off">
+                <div class="compare-inputs-grid">
+                    <div class="form-group">
+                        <label for="barcode_a" class="form-label">Product A Barcode</label>
+                        <input 
+                            type="text" 
+                            id="barcode_a" 
+                            name="barcode_a" 
+                            class="input-field" 
+                            value="{{ barcode_a|default:'' }}" 
+                            placeholder="e.g. 3017620422003" 
+                            required
+                        />
+                    </div>
+                    <div class="form-group">
+                        <label for="barcode_b" class="form-label">Product B Barcode</label>
+                        <input 
+                            type="text" 
+                            id="barcode_b" 
+                            name="barcode_b" 
+                            class="input-field" 
+                            value="{{ barcode_b|default:'' }}" 
+                            placeholder="e.g. 7622210449283" 
+                            required
+                        />
+                    </div>
+                </div>
+                <button type="submit" class="btn-primary full-width margin-top-md">
+                    ⚖️ Compare Products
+                </button>
+            </form>
+        </div>
+
+        {% if error_msg %}
+            <div class="error-box margin-top-md" style="display: block;">
+                {{ error_msg }}
+            </div>
+        {% endif %}
+
+        {% if product_a and product_b %}
+            <!-- Side-by-Side Product Overview Cards -->
+            <div class="compare-products-grid margin-top-md">
+                <!-- Product A Card -->
+                <div class="card compare-prod-card compare-prod-a">
+                    <div class="prod-badge badge-a">Product A</div>
+                    <h3 class="product-title margin-top-xs">{{ product_a.product_name }}</h3>
+                    <div class="product-brand">Brand: {{ product_a.brand|default:"Not available" }}</div>
+                    <div class="meta-item margin-top-xs">Barcode: <span>{{ product_a.barcode }}</span></div>
+                </div>
+
+                <!-- Product B Card -->
+                <div class="card compare-prod-card compare-prod-b">
+                    <div class="prod-badge badge-b">Product B</div>
+                    <h3 class="product-title margin-top-xs">{{ product_b.product_name }}</h3>
+                    <div class="product-brand">Brand: {{ product_b.brand|default:"Not available" }}</div>
+                    <div class="meta-item margin-top-xs">Barcode: <span>{{ product_b.barcode }}</span></div>
+                </div>
+            </div>
+
+            <!-- Comparison Table -->
+            <div class="card section-card margin-top-md">
+                <div class="dashboard-section-header">
+                    <h2 class="section-heading">Nutrition Comparison (per 100g)</h2>
+                </div>
+
+                <div class="table-responsive margin-top-sm">
+                    <table class="compare-table">
+                        <thead>
+                            <tr>
+                                <th>Nutrient</th>
+                                <th>{{ product_a.product_name }} (A)</th>
+                                <th>{{ product_b.product_name }} (B)</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td><strong>Calories</strong></td>
+                                <td>{% if product_a.calories is not None %}{{ product_a.calories }} kcal{% else %}N/A{% endif %}</td>
+                                <td>{% if product_b.calories is not None %}{{ product_b.calories }} kcal{% else %}N/A{% endif %}</td>
+                            </tr>
+                            <tr>
+                                <td><strong>Protein</strong></td>
+                                <td>{% if product_a.protein is not None %}{{ product_a.protein }} g{% else %}N/A{% endif %}</td>
+                                <td>{% if product_b.protein is not None %}{{ product_b.protein }} g{% else %}N/A{% endif %}</td>
+                            </tr>
+                            <tr>
+                                <td><strong>Carbohydrates</strong></td>
+                                <td>{% if product_a.carbohydrates is not None %}{{ product_a.carbohydrates }} g{% else %}N/A{% endif %}</td>
+                                <td>{% if product_b.carbohydrates is not None %}{{ product_b.carbohydrates }} g{% else %}N/A{% endif %}</td>
+                            </tr>
+                            <tr>
+                                <td><strong>Total Fat</strong></td>
+                                <td>{% if product_a.fat is not None %}{{ product_a.fat }} g{% else %}N/A{% endif %}</td>
+                                <td>{% if product_b.fat is not None %}{{ product_b.fat }} g{% else %}N/A{% endif %}</td>
+                            </tr>
+                            <tr>
+                                <td><strong>Saturated Fat</strong></td>
+                                <td>{% if product_a.saturated_fat is not None %}{{ product_a.saturated_fat }} g{% else %}N/A{% endif %}</td>
+                                <td>{% if product_b.saturated_fat is not None %}{{ product_b.saturated_fat }} g{% else %}N/A{% endif %}</td>
+                            </tr>
+                            <tr>
+                                <td><strong>Sugar</strong></td>
+                                <td>{% if product_a.sugar is not None %}{{ product_a.sugar }} g{% else %}N/A{% endif %}</td>
+                                <td>{% if product_b.sugar is not None %}{{ product_b.sugar }} g{% else %}N/A{% endif %}</td>
+                            </tr>
+                            <tr>
+                                <td><strong>Fiber</strong></td>
+                                <td>{% if product_a.fiber is not None %}{{ product_a.fiber }} g{% else %}N/A{% endif %}</td>
+                                <td>{% if product_b.fiber is not None %}{{ product_b.fiber }} g{% else %}N/A{% endif %}</td>
+                            </tr>
+                            <tr>
+                                <td><strong>Sodium</strong></td>
+                                <td>{% if product_a.sodium is not None %}{{ product_a.sodium }} g{% else %}N/A{% endif %}</td>
+                                <td>{% if product_b.sodium is not None %}{{ product_b.sodium }} g{% else %}N/A{% endif %}</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- Grouped Bar Chart -->
+            <div class="card section-card margin-top-md">
+                <div class="dashboard-section-header">
+                    <h2 class="section-heading">Nutrient Graph Comparison</h2>
+                </div>
+                <div class="chart-wrapper" style="height: 300px;">
+                    <canvas id="compareChartCanvas"></canvas>
+                </div>
+                <p class="chart-note">Values are shown in grams per 100g. Calories and Sodium are excluded from the bar graph for scale accuracy.</p>
+            </div>
+
+            <!-- Quick Comparison Rule-Based Insights -->
+            {% if insights %}
+                <div class="card section-card margin-top-md">
+                    <div class="dashboard-section-header">
+                        <h2 class="section-heading">Quick Comparison</h2>
+                    </div>
+                    <ul class="analysis-list margin-top-sm">
+                        {% for item in insights %}
+                            <li>{{ item }}</li>
+                        {% endfor %}
+                    </ul>
+                </div>
+            {% endif %}
+
+            <!-- AI Comparison Section -->
+            <div class="card section-card margin-top-md">
+                <div class="analysis-action-row">
+                    <button type="button" id="compare-ai-btn" class="btn-secondary">
+                        🤖 Compare with AI
+                    </button>
+                    <div class="analysis-subtext">
+                        Get AI-powered balanced trade-off analysis between these two products based on ingredients and nutritional metrics.
+                    </div>
+                </div>
+
+                <!-- Loading Spinner for AI -->
+                <div id="compare-ai-loading-box" class="loading-box">
+                    <span class="spinner"></span>
+                    <span>AI is comparing ingredients and nutritional trade-offs between both products...</span>
+                </div>
+
+                <!-- Error Alert for AI -->
+                <div id="compare-ai-error-box" class="error-box"></div>
+
+                <!-- AI Comparison Output Container -->
+                <div id="compare-ai-container" class="analysis-container margin-top-md" style="display: none;">
+                    <h3 class="analysis-title">AI Product Trade-off Comparison</h3>
+                    <div id="compare-ai-summary" class="analysis-summary margin-top-sm"></div>
+
+                    <!-- Product A Strengths -->
+                    <div id="sec-ai-a-strengths" class="analysis-block positive-block margin-top-md">
+                        <h4 class="block-title" id="title-a-strengths">Product A Advantages</h4>
+                        <ul id="list-a-strengths" class="analysis-list"></ul>
+                    </div>
+
+                    <!-- Product B Strengths -->
+                    <div id="sec-ai-b-strengths" class="analysis-block positive-block margin-top-md">
+                        <h4 class="block-title" id="title-b-strengths">Product B Advantages</h4>
+                        <ul id="list-b-strengths" class="analysis-list"></ul>
+                    </div>
+
+                    <!-- Important Differences -->
+                    <div id="sec-ai-differences" class="analysis-block concern-block margin-top-md">
+                        <h4 class="block-title">Key Differences to Consider</h4>
+                        <ul id="list-differences" class="analysis-list"></ul>
+                    </div>
+
+                    <!-- Who Might Prefer Product A -->
+                    <div id="sec-ai-prefer-a" class="analysis-block condition-block margin-top-md">
+                        <h4 class="block-title" id="title-prefer-a">Who Might Prefer Product A</h4>
+                        <ul id="list-prefer-a" class="analysis-list"></ul>
+                    </div>
+
+                    <!-- Who Might Prefer Product B -->
+                    <div id="sec-ai-prefer-b" class="analysis-block condition-block margin-top-md">
+                        <h4 class="block-title" id="title-prefer-b">Who Might Prefer Product B</h4>
+                        <ul id="list-prefer-b" class="analysis-list"></ul>
+                    </div>
+
+                    <!-- Final Note -->
+                    <div id="compare-ai-final-note" class="personalized-note-text margin-top-md"></div>
+
+                    <!-- Medical Disclaimer -->
+                    <div id="compare-ai-disclaimer" class="analysis-disclaimer margin-top-md"></div>
+                </div>
+            </div>
+        {% endif %}
+
+        <!-- Multi-column Footer -->
+        <footer class="bg-white rounded-3xl border border-slate-200/90 p-8 md:p-12 shadow-sm mt-8">
+            <div class="grid grid-cols-1 md:grid-cols-4 gap-8 mb-8 pb-8 border-b border-slate-100">
+                <div>
+                    <div class="flex items-center gap-2 mb-3">
+                        <div class="w-8 h-8 rounded-xl bg-gradient-to-tr from-sky-600 to-emerald-500 flex items-center justify-center text-white text-base font-black shadow-md shadow-sky-500/20">
+                            🥗
+                        </div>
+                        <span class="text-xl font-black text-slate-900 tracking-tight">BiteCheck <span class="text-sky-600">AI</span></span>
+                    </div>
+                    <p class="text-xs text-slate-500 leading-relaxed mb-4">
+                        Smart AI-powered packaged food analyzer. Decode ingredients, check nutrition, detect allergens, and make informed food choices.
+                    </p>
+                    <div class="flex items-center gap-2 flex-wrap">
+                        <span class="px-2.5 py-1 text-xs font-bold text-emerald-700 bg-emerald-50 border border-emerald-200 rounded-full">● Gemini AI 2.5</span>
+                        <span class="px-2.5 py-1 text-xs font-bold text-sky-700 bg-sky-50 border border-sky-200 rounded-full">Open Food Facts</span>
+                    </div>
+                </div>
+
+                <div>
+                    <h4 class="text-xs font-bold text-slate-900 uppercase tracking-wider mb-4">Quick Navigation</h4>
+                    <ul class="space-y-2 text-xs text-slate-600 font-medium">
+                        <li><a href="{% url 'dashboard' %}" class="hover:text-sky-600 transition-colors">Dashboard Analytics</a></li>
+                        <li><a href="{% url 'barcode_search' %}" class="hover:text-sky-600 transition-colors">Scan Barcode</a></li>
+                        <li><a href="{% url 'compare_products' %}" class="hover:text-sky-600 transition-colors">Compare 2 Products</a></li>
+                        <li><a href="{% url 'saved_products' %}" class="hover:text-sky-600 transition-colors">Saved Favorites</a></li>
+                        <li><a href="{% url 'food_insights' %}" class="hover:text-sky-600 transition-colors">My Food Insights</a></li>
+                        <li><a href="{% url 'scan_history' %}" class="hover:text-sky-600 transition-colors">Scan History</a></li>
+                    </ul>
+                </div>
+
+                <div>
+                    <h4 class="text-xs font-bold text-slate-900 uppercase tracking-wider mb-4">Health Intelligence</h4>
+                    <ul class="space-y-2 text-xs text-slate-600 font-medium">
+                        <li class="flex items-center gap-1.5"><span class="text-emerald-500 font-bold">✓</span> Gemini Ingredient Audit</li>
+                        <li class="flex items-center gap-1.5"><span class="text-emerald-500 font-bold">✓</span> Personal Allergen Alert</li>
+                        <li class="flex items-center gap-1.5"><span class="text-emerald-500 font-bold">✓</span> Health Rating Score</li>
+                        <li class="flex items-center gap-1.5"><span class="text-emerald-500 font-bold">✓</span> Macronutrient Breakdown</li>
+                        <li class="flex items-center gap-1.5"><span class="text-emerald-500 font-bold">✓</span> Health Condition Safety</li>
+                    </ul>
+                </div>
+
+                <div>
+                    <h4 class="text-xs font-bold text-slate-900 uppercase tracking-wider mb-4">Medical Disclaimer</h4>
+                    <p class="text-xs text-slate-500 leading-relaxed mb-3">
+                        BiteCheck AI provides educational nutrition information only. It is not intended to diagnose, treat, or replace professional medical advice.
+                    </p>
+                    <p class="text-xs font-semibold text-slate-700">
+                        Always check package labels if you have severe allergies.
+                    </p>
+                </div>
+            </div>
+
+            <div class="flex flex-col sm:flex-row items-center justify-between gap-4 text-xs text-slate-500 font-medium">
+                <p>© 2026 <strong>BiteCheck AI</strong>. Empowering Healthier Dietary Choices Every Day.</p>
+                <div class="flex items-center gap-4">
+                    <span class="hover:text-slate-800">Privacy Policy</span>
+                    <span>•</span>
+                    <span class="hover:text-slate-800">Terms of Service</span>
+                    <span>•</span>
+                    <span class="hover:text-slate-800">PWA Enabled</span>
+                </div>
+            </div>
+        </footer>
+    </div>
+
+    {% if product_a and product_b %}
+        <!-- Safe JSON Data for Chart.js & AI Comparison -->
+        <script id="prod-a-data" type="application/json">
+            {
+                "name": "{{ product_a.product_name|escapejs }}",
+                "barcode": "{{ product_a.barcode }}",
+                "protein": {% if product_a.protein is not None %}{{ product_a.protein }}{% else %}null{% endif %},
+                "carbs": {% if product_a.carbohydrates is not None %}{{ product_a.carbohydrates }}{% else %}null{% endif %},
+                "fat": {% if product_a.fat is not None %}{{ product_a.fat }}{% else %}null{% endif %},
+                "sat_fat": {% if product_a.saturated_fat is not None %}{{ product_a.saturated_fat }}{% else %}null{% endif %},
+                "sugar": {% if product_a.sugar is not None %}{{ product_a.sugar }}{% else %}null{% endif %},
+                "fiber": {% if product_a.fiber is not None %}{{ product_a.fiber }}{% else %}null{% endif %}
+            }
+        </script>
+        <script id="prod-b-data" type="application/json">
+            {
+                "name": "{{ product_b.product_name|escapejs }}",
+                "barcode": "{{ product_b.barcode }}",
+                "protein": {% if product_b.protein is not None %}{{ product_b.protein }}{% else %}null{% endif %},
+                "carbs": {% if product_b.carbohydrates is not None %}{{ product_b.carbohydrates }}{% else %}null{% endif %},
+                "fat": {% if product_b.fat is not None %}{{ product_b.fat }}{% else %}null{% endif %},
+                "sat_fat": {% if product_b.saturated_fat is not None %}{{ product_b.saturated_fat }}{% else %}null{% endif %},
+                "sugar": {% if product_b.sugar is not None %}{{ product_b.sugar }}{% else %}null{% endif %},
+                "fiber": {% if product_b.fiber is not None %}{{ product_b.fiber }}{% else %}null{% endif %}
+            }
+        </script>
+
+        <script>
+            document.addEventListener('DOMContentLoaded', () => {
+                const prodA = JSON.parse(document.getElementById('prod-a-data').textContent);
+                const prodB = JSON.parse(document.getElementById('prod-b-data').textContent);
+
+                // --- GROUPED CHART.JS BAR CHART ---
+                const canvas = document.getElementById('compareChartCanvas');
+                if (canvas) {
+                    const nutrientDefs = [
+                        { label: 'Protein', key: 'protein' },
+                        { label: 'Carbohydrates', key: 'carbs' },
+                        { label: 'Fat', key: 'fat' },
+                        { label: 'Saturated Fat', key: 'sat_fat' },
+                        { label: 'Sugar', key: 'sugar' },
+                        { label: 'Fiber', key: 'fiber' }
+                    ];
+
+                    const labels = [];
+                    const dataA = [];
+                    const dataB = [];
+
+                    nutrientDefs.forEach(def => {
+                        const valA = prodA[def.key];
+                        const valB = prodB[def.key];
+
+                        // Skip nutrient if BOTH products have no data for it
+                        if (valA !== null || valB !== null) {
+                            labels.push(def.label);
+                            dataA.push(valA !== null ? valA : 0);
+                            dataB.push(valB !== null ? valB : 0);
+                        }
+                    });
+
+                    if (labels.length > 0) {
+                        const ctx = canvas.getContext('2d');
+                        new Chart(ctx, {
+                            type: 'bar',
+                            data: {
+                                labels: labels,
+                                datasets: [
+                                    {
+                                        label: prodA.name,
+                                        data: dataA,
+                                        backgroundColor: '#38bdf8',
+                                        borderRadius: 4,
+                                        maxBarThickness: 35
+                                    },
+                                    {
+                                        label: prodB.name,
+                                        data: dataB,
+                                        backgroundColor: '#a855f7',
+                                        borderRadius: 4,
+                                        maxBarThickness: 35
+                                    }
+                                ]
+                            },
+                            options: {
+                                responsive: true,
+                                maintainAspectRatio: false,
+                                animation: false,
+                                plugins: {
+                                    legend: {
+                                        position: 'top',
+                                        labels: { color: '#94a3b8', font: { family: 'Inter', size: 12, weight: '600' } }
+                                    },
+                                    tooltip: {
+                                        callbacks: {
+                                            label: function(context) {
+                                                return ` ${context.dataset.label}: ${context.parsed.y}g`;
+                                            }
+                                        }
+                                    }
+                                },
+                                scales: {
+                                    x: {
+                                        ticks: { color: '#94a3b8', font: { family: 'Inter', size: 11, weight: '500' } },
+                                        grid: { display: false }
+                                    },
+                                    y: {
+                                        title: {
+                                            display: true,
+                                            text: 'Grams per 100g',
+                                            color: '#94a3b8',
+                                            font: { family: 'Inter', size: 11, weight: '600' }
+                                        },
+                                        ticks: { color: '#94a3b8', font: { family: 'Inter', size: 11 } },
+                                        grid: { color: '#334155' },
+                                        beginAtZero: true
+                                    }
+                                }
+                            }
+                        });
+                    }
+                }
+
+                // --- COMPARE WITH AI BUTTON EVENT LISTENER ---
+                const compareAiBtn = document.getElementById('compare-ai-btn');
+                const loadingBox = document.getElementById('compare-ai-loading-box');
+                const errorBox = document.getElementById('compare-ai-error-box');
+                const aiContainer = document.getElementById('compare-ai-container');
+
+                function renderList(sectionId, listId, itemsArray) {
+                    const sec = document.getElementById(sectionId);
+                    const list = document.getElementById(listId);
+                    if (Array.isArray(itemsArray) && itemsArray.length > 0) {
+                        list.innerHTML = '';
+                        itemsArray.forEach(item => {
+                            if (item && item.trim()) {
+                                const li = document.createElement('li');
+                                li.textContent = item;
+                                list.appendChild(li);
+                            }
+                        });
+                        sec.style.display = 'block';
+                    } else {
+                        sec.style.display = 'none';
+                    }
+                }
+
+                if (compareAiBtn) {
+                    compareAiBtn.addEventListener('click', async () => {
+                        compareAiBtn.disabled = true;
+                        compareAiBtn.textContent = 'Comparing...';
+                        errorBox.style.display = 'none';
+                        errorBox.textContent = '';
+                        aiContainer.style.display = 'none';
+                        loadingBox.style.display = 'flex';
+
+                        try {
+                            const url = `/health-analysis/compare/${encodeURIComponent(prodA.barcode)}/${encodeURIComponent(prodB.barcode)}/`;
+                            const response = await fetch(url);
+                            const data = await response.json();
+
+                            if (response.ok && data.success && data.comparison) {
+                                const comp = data.comparison;
+
+                                document.getElementById('compare-ai-summary').textContent = comp.comparison_summary || 'Comparison completed.';
+                                
+                                document.getElementById('title-a-strengths').textContent = `${data.product_a.name} Advantages`;
+                                renderList('sec-ai-a-strengths', 'list-a-strengths', comp.product_a_strengths);
+
+                                document.getElementById('title-b-strengths').textContent = `${data.product_b.name} Advantages`;
+                                renderList('sec-ai-b-strengths', 'list-b-strengths', comp.product_b_strengths);
+
+                                renderList('sec-ai-differences', 'list-differences', comp.important_differences);
+
+                                document.getElementById('title-prefer-a').textContent = `Who Might Prefer ${data.product_a.name}`;
+                                renderList('sec-ai-prefer-a', 'list-prefer-a', comp.who_might_prefer_product_a);
+
+                                document.getElementById('title-prefer-b').textContent = `Who Might Prefer ${data.product_b.name}`;
+                                renderList('sec-ai-prefer-b', 'list-prefer-b', comp.who_might_prefer_product_b);
+
+                                document.getElementById('compare-ai-final-note').textContent = comp.final_note || '';
+                                document.getElementById('compare-ai-disclaimer').textContent = comp.disclaimer || 'Educational comparison only. Always check product packaging for accurate ingredient and allergen details.';
+
+                                aiContainer.style.display = 'block';
+                            } else {
+                                errorBox.textContent = data.message || 'Unable to complete AI product comparison.';
+                                errorBox.style.display = 'block';
+                            }
+                        } catch (err) {
+                            console.error("AI comparison error:", err);
+                            errorBox.textContent = 'Unable to complete AI product comparison. Please try again.';
+                            errorBox.style.display = 'block';
+                        } finally {
+                            loadingBox.style.display = 'none';
+                            compareAiBtn.disabled = false;
+                            compareAiBtn.textContent = '🤖 Compare with AI';
+                        }
+                    });
+                }
+            });
+        </script>
+    {% endif %}
+
+    <!-- PWA Registration -->
+    <script src="{% static 'js/pwa_register.js' %}"></script>
+</body>
+</html>

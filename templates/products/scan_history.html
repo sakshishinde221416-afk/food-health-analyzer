@@ -1,0 +1,315 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Scan History - BiteCheck AI</title>
+
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+
+    <!-- External CSS -->
+    <link rel="stylesheet" href="{% static 'css/style.css' %}?v=3.0">
+
+    <!-- PWA & Mobile Meta Tags -->
+    <meta name="theme-color" content="#0066cc">
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="BiteCheck AI">
+    <link rel="manifest" href="{% static 'manifest.json' %}">
+    <link rel="apple-touch-icon" href="{% static 'icons/icon-192.png' %}">
+</head>
+<body class="bg-gradient-to-b from-sky-50/70 via-slate-50 to-slate-100 min-h-screen text-slate-900 font-sans antialiased">
+
+    <div class="max-w-5xl mx-auto px-4 py-6">
+        <!-- Navigation Header -->
+        <nav class="bg-white/90 backdrop-blur-md border border-slate-200/80 rounded-2xl px-6 py-3.5 mb-8 shadow-sm flex items-center justify-between flex-wrap gap-4">
+            <a href="{% if user.is_authenticated %}{% url 'dashboard' %}{% else %}{% url 'home' %}{% endif %}" class="flex items-center gap-2.5 group text-decoration-none">
+                <div class="w-9 h-9 rounded-xl bg-gradient-to-tr from-sky-600 to-emerald-500 flex items-center justify-center text-white text-lg shadow-md shadow-sky-500/20 group-hover:scale-105 transition-transform">
+                    🥗
+                </div>
+                <span class="text-xl font-black text-slate-900 tracking-tight">BiteCheck <span class="text-sky-600">AI</span></span>
+            </a>
+            <div class="nav-links">
+                {% if user.is_authenticated %}
+                    <a href="{% url 'dashboard' %}" class="nav-link">Dashboard</a>
+                    <a href="{% url 'barcode_search' %}" class="nav-link">Scan Product</a>
+                    <a href="{% url 'compare_products' %}" class="nav-link">Compare</a>
+                    <a href="{% url 'saved_products' %}" class="nav-link">Saved</a>
+                    <a href="{% url 'food_insights' %}" class="nav-link">Insights</a>
+                    <a href="{% url 'scan_history' %}" class="nav-link active">History</a>
+                    <a href="{% url 'profile' %}" class="nav-link">Profile</a>
+                    <a href="{% url 'logout' %}" class="nav-link btn-logout">Logout ({{ user.username }})</a>
+                {% else %}
+                    <a href="{% url 'home' %}" class="nav-link">Home</a>
+                    <a href="{% url 'login' %}" class="nav-link">Login</a>
+                    <a href="{% url 'signup' %}" class="nav-link">Sign Up</a>
+                {% endif %}
+            </div>
+        </nav>
+
+        <!-- Page Header -->
+        <header class="app-header history-header-row">
+            <div>
+                <h1 class="app-title">Scan History</h1>
+                <p class="app-subtitle">Review the food products you have scanned and analyzed.</p>
+            </div>
+            {% if total_scans_count > 0 %}
+                <form method="POST" action="{% url 'clear_scan_history' %}" onsubmit="return confirm('Are you sure you want to clear your entire scan history? This action cannot be undone.');">
+                    {% csrf_token %}
+                    <button type="submit" class="btn-danger btn-sm">Clear All History</button>
+                </form>
+            {% endif %}
+        </header>
+
+        {% if messages %}
+            <div class="messages">
+                {% for message in messages %}
+                    <div class="alert alert-{{ message.tags }}">{{ message }}</div>
+                {% endfor %}
+            </div>
+        {% endif %}
+
+        <!-- Search & Filter Card -->
+        {% if total_scans_count > 0 %}
+        <div class="card history-filter-card">
+            <form method="GET" action="{% url 'scan_history' %}" class="history-filter-form">
+                <div class="filter-bar-grid">
+                    <!-- Search Input -->
+                    <div class="filter-field-group search-field-wrapper">
+                        <input 
+                            type="text" 
+                            name="q" 
+                            class="input-field" 
+                            placeholder="Search by product name, brand or barcode"
+                            value="{{ q }}"
+                        />
+                    </div>
+
+                    <!-- Rating Filter -->
+                    <div class="filter-field-group">
+                        <select name="rating" class="input-field filter-select">
+                            <option value="" {% if not rating %}selected{% endif %}>All Ratings</option>
+                            <option value="good" {% if rating == 'good' %}selected{% endif %}>Good Choice</option>
+                            <option value="moderate" {% if rating == 'moderate' %}selected{% endif %}>Moderate</option>
+                            <option value="limit" {% if rating == 'limit' %}selected{% endif %}>Limit Intake</option>
+                            <option value="not_analyzed" {% if rating == 'not_analyzed' %}selected{% endif %}>Not Analyzed</option>
+                        </select>
+                    </div>
+
+                    <!-- Date Range Filter -->
+                    <div class="filter-field-group">
+                        <select name="range" class="input-field filter-select">
+                            <option value="" {% if not range_param %}selected{% endif %}>All Time</option>
+                            <option value="7" {% if range_param == '7' %}selected{% endif %}>Last 7 Days</option>
+                            <option value="30" {% if range_param == '30' %}selected{% endif %}>Last 30 Days</option>
+                            <option value="90" {% if range_param == '90' %}selected{% endif %}>Last 90 Days</option>
+                        </select>
+                    </div>
+
+                    <!-- Action Buttons -->
+                    <div class="filter-actions-group">
+                        <button type="submit" class="btn-primary filter-btn">Search & Filter</button>
+                        {% if has_active_filters %}
+                            <a href="{% url 'scan_history' %}" class="btn-secondary filter-btn">Clear Filters</a>
+                        {% endif %}
+                    </div>
+                </div>
+            </form>
+        </div>
+
+        <!-- Summary Results Bar -->
+        <div class="summary-results-bar margin-top-sm">
+            <span class="matching-count">Showing <strong>{{ matching_scans_count }}</strong> matching scan{% if matching_scans_count != 1 %}s{% endif %}</span>
+            <span class="total-count">Total scans: <strong>{{ total_scans_count }}</strong></span>
+        </div>
+        {% endif %}
+
+        {% if page_obj.object_list %}
+            <div class="history-list margin-top-sm">
+                {% for item in page_obj %}
+                    <div class="card history-card">
+                        <div class="history-card-header">
+                            <div>
+                                <h3 class="history-product-name">{{ item.product.product_name }}</h3>
+                                {% if item.product.brand %}
+                                    <div class="history-brand">Brand: {{ item.product.brand }}</div>
+                                {% endif %}
+                            </div>
+                            <div>
+                                {% if item.analysis_rating %}
+                                    {% if item.analysis_rating == "Good Choice" %}
+                                        <span class="rating-badge rating-good">Good Choice</span>
+                                    {% elif item.analysis_rating == "Limit Intake" %}
+                                        <span class="rating-badge rating-limit">Limit Intake</span>
+                                    {% else %}
+                                        <span class="rating-badge rating-moderate">{{ item.analysis_rating }}</span>
+                                    {% endif %}
+                                {% else %}
+                                    <span class="rating-badge rating-moderate">Not analyzed</span>
+                                {% endif %}
+                            </div>
+                        </div>
+
+                        <div class="history-meta">
+                            <span><strong>Barcode:</strong> {{ item.product.barcode }}</span>
+                            <span><strong>Scanned:</strong> {{ item.scanned_at|date:"M d, Y, h:i A" }}</span>
+                        </div>
+
+                        {% if item.analysis_summary %}
+                            <div class="history-summary">
+                                {{ item.analysis_summary }}
+                            </div>
+                        {% endif %}
+
+                        <div class="history-card-footer">
+                            <a href="{% url 'barcode_search' %}?barcode={{ item.product.barcode }}&analyze=true" class="btn-secondary btn-sm">
+                                Analyze Again
+                            </a>
+                            <a href="{% url 'barcode_search' %}?barcode={{ item.product.barcode }}" class="btn-view-product">
+                                View Product
+                            </a>
+                            <form method="POST" action="{% url 'delete_scan_history_item' item.id %}" class="delete-history-form" onsubmit="return confirm('Are you sure you want to delete this scan from history?');">
+                                {% csrf_token %}
+                                <button type="submit" class="btn-danger btn-sm">
+                                    🗑️ Delete
+                                </button>
+                            </form>
+                        </div>
+                    </div>
+                {% endfor %}
+            </div>
+
+            <!-- Built-in Pagination Controls with Preserved Filters -->
+            {% if page_obj.paginator.num_pages > 1 %}
+                <div class="pagination-container">
+                    <div class="pagination-info">
+                        Page {{ page_obj.number }} of {{ page_obj.paginator.num_pages }}
+                        <span class="pagination-count">({{ matching_scans_count }} matching scans)</span>
+                    </div>
+
+                    <div class="pagination-links">
+                        {% if page_obj.has_previous %}
+                            <a href="?page={{ page_obj.previous_page_number }}&q={{ q }}&rating={{ rating }}&range={{ range_param }}" class="pagination-btn">
+                                &laquo; Previous
+                            </a>
+                        {% else %}
+                            <span class="pagination-btn disabled">&laquo; Previous</span>
+                        {% endif %}
+
+                        {% for p in page_obj.paginator.page_range %}
+                            {% if p == page_obj.number %}
+                                <span class="pagination-number active">{{ p }}</span>
+                            {% elif p >= page_obj.number|add:"-2" and p <= page_obj.number|add:"2" %}
+                                <a href="?page={{ p }}&q={{ q }}&rating={{ rating }}&range={{ range_param }}" class="pagination-number">{{ p }}</a>
+                            {% endif %}
+                        {% endfor %}
+
+                        {% if page_obj.has_next %}
+                            <a href="?page={{ page_obj.next_page_number }}&q={{ q }}&rating={{ rating }}&range={{ range_param }}" class="pagination-btn">
+                                Next &raquo;
+                            </a>
+                        {% else %}
+                            <span class="pagination-btn disabled">Next &raquo;</span>
+                        {% endif %}
+                    </div>
+                </div>
+            {% endif %}
+
+        {% elif has_active_filters %}
+            <!-- FILTERED EMPTY STATE -->
+            <div class="card empty-history-card margin-top-md">
+                <div class="empty-icon">🔍</div>
+                <h3 class="empty-history-title">No scans match your filters.</h3>
+                <p class="empty-history-text">Try adjusting your search query, rating selection, or date range.</p>
+                <a href="{% url 'scan_history' %}" class="btn-primary margin-top-md inline-btn">Clear Filters</a>
+            </div>
+
+        {% else %}
+            <!-- TRUE EMPTY STATE -->
+            <div class="card empty-history-card margin-top-md">
+                <div class="empty-icon">📜</div>
+                <h3 class="empty-history-title">No scan history yet.</h3>
+                <p class="empty-history-text">Scan food products to start building your personal scan history.</p>
+                <a href="{% url 'barcode_search' %}" class="btn-primary margin-top-md inline-btn">Scan Your First Product</a>
+            </div>
+        {% endif %}
+
+        <!-- Multi-column Footer -->
+        <footer class="bg-white rounded-3xl border border-slate-200/90 p-8 md:p-12 shadow-sm mt-8">
+            <div class="grid grid-cols-1 md:grid-cols-4 gap-8 mb-8 pb-8 border-b border-slate-100">
+                <div>
+                    <div class="flex items-center gap-2 mb-3">
+                        <div class="w-8 h-8 rounded-xl bg-gradient-to-tr from-sky-600 to-emerald-500 flex items-center justify-center text-white text-base font-black shadow-md shadow-sky-500/20">
+                            🥗
+                        </div>
+                        <span class="text-xl font-black text-slate-900 tracking-tight">BiteCheck <span class="text-sky-600">AI</span></span>
+                    </div>
+                    <p class="text-xs text-slate-500 leading-relaxed mb-4">
+                        Smart AI-powered packaged food analyzer. Decode ingredients, check nutrition, detect allergens, and make informed food choices.
+                    </p>
+                    <div class="flex items-center gap-2 flex-wrap">
+                        <span class="px-2.5 py-1 text-xs font-bold text-emerald-700 bg-emerald-50 border border-emerald-200 rounded-full">● Gemini AI 2.5</span>
+                        <span class="px-2.5 py-1 text-xs font-bold text-sky-700 bg-sky-50 border border-sky-200 rounded-full">Open Food Facts</span>
+                    </div>
+                </div>
+
+                <div>
+                    <h4 class="text-xs font-bold text-slate-900 uppercase tracking-wider mb-4">Quick Navigation</h4>
+                    <ul class="space-y-2 text-xs text-slate-600 font-medium">
+                        <li><a href="{% url 'dashboard' %}" class="hover:text-sky-600 transition-colors">Dashboard Analytics</a></li>
+                        <li><a href="{% url 'barcode_search' %}" class="hover:text-sky-600 transition-colors">Scan Barcode</a></li>
+                        <li><a href="{% url 'compare_products' %}" class="hover:text-sky-600 transition-colors">Compare 2 Products</a></li>
+                        <li><a href="{% url 'saved_products' %}" class="hover:text-sky-600 transition-colors">Saved Favorites</a></li>
+                        <li><a href="{% url 'food_insights' %}" class="hover:text-sky-600 transition-colors">My Food Insights</a></li>
+                        <li><a href="{% url 'scan_history' %}" class="hover:text-sky-600 transition-colors">Scan History</a></li>
+                    </ul>
+                </div>
+
+                <div>
+                    <h4 class="text-xs font-bold text-slate-900 uppercase tracking-wider mb-4">Health Intelligence</h4>
+                    <ul class="space-y-2 text-xs text-slate-600 font-medium">
+                        <li class="flex items-center gap-1.5"><span class="text-emerald-500 font-bold">✓</span> Gemini Ingredient Audit</li>
+                        <li class="flex items-center gap-1.5"><span class="text-emerald-500 font-bold">✓</span> Personal Allergen Alert</li>
+                        <li class="flex items-center gap-1.5"><span class="text-emerald-500 font-bold">✓</span> Health Rating Score</li>
+                        <li class="flex items-center gap-1.5"><span class="text-emerald-500 font-bold">✓</span> Macronutrient Breakdown</li>
+                        <li class="flex items-center gap-1.5"><span class="text-emerald-500 font-bold">✓</span> Health Condition Safety</li>
+                    </ul>
+                </div>
+
+                <div>
+                    <h4 class="text-xs font-bold text-slate-900 uppercase tracking-wider mb-4">Medical Disclaimer</h4>
+                    <p class="text-xs text-slate-500 leading-relaxed mb-3">
+                        BiteCheck AI provides educational nutrition information only. It is not intended to diagnose, treat, or replace professional medical advice.
+                    </p>
+                    <p class="text-xs font-semibold text-slate-700">
+                        Always check package labels if you have severe allergies.
+                    </p>
+                </div>
+            </div>
+
+            <div class="flex flex-col sm:flex-row items-center justify-between gap-4 text-xs text-slate-500 font-medium">
+                <p>© 2026 <strong>BiteCheck AI</strong>. Empowering Healthier Dietary Choices Every Day.</p>
+                <div class="flex items-center gap-4">
+                    <span class="hover:text-slate-800">Privacy Policy</span>
+                    <span>•</span>
+                    <span class="hover:text-slate-800">Terms of Service</span>
+                    <span>•</span>
+                    <span class="hover:text-slate-800">PWA Enabled</span>
+                </div>
+            </div>
+        </footer>
+
+    </div>
+
+    <!-- PWA Registration -->
+    <script src="{% static 'js/pwa_register.js' %}"></script>
+</body>
+</html>

@@ -1,0 +1,50 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="theme-color" content="#10b981">
+    <title>You're Offline - BiteCheck AI</title>
+
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+
+    <!-- External CSS -->
+    <link rel="stylesheet" href="{% static 'css/style.css' %}">
+</head>
+<body>
+
+    <div class="container">
+        <!-- Navigation Header -->
+        <nav class="nav-bar">
+            <a href="{% if user.is_authenticated %}{% url 'dashboard' %}{% else %}{% url 'home' %}{% endif %}" class="nav-brand">BiteCheck AI</a>
+        </nav>
+
+        <!-- Offline Container Card -->
+        <div class="card empty-history-card margin-top-md">
+            <div class="empty-icon">📡</div>
+            <h1 class="app-title">You're offline.</h1>
+            <p class="section-desc margin-top-sm">
+                An internet connection is required to scan new products and use AI health analysis.
+            </p>
+            <p class="empty-history-text margin-top-xs">
+                Please reconnect and try again.
+            </p>
+            <div class="margin-top-md">
+                <button type="button" onclick="window.location.reload()" class="btn-primary inline-btn">
+                    🔄 Try Reconnecting
+                </button>
+            </div>
+        </div>
+
+        <!-- Footer -->
+        <footer class="app-footer">
+            <p>&copy; 2026 BiteCheck AI. All rights reserved.</p>
+        </footer>
+    </div>
+
+</body>
+</html>

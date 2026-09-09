@@ -1,0 +1,362 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>BiteCheck AI - Barcode Scanner & Health Analysis</title>
+
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+
+    <!-- html5-qrcode Library CDN -->
+    <script src="https://unpkg.com/html5-qrcode@2.3.8/html5-qrcode.min.js"></script>
+
+    <!-- Chart.js CDN -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+
+    <!-- External CSS -->
+    <link rel="stylesheet" href="{% static 'css/style.css' %}?v=3.0">
+
+    <!-- PWA & Mobile Meta Tags -->
+    <meta name="theme-color" content="#0066cc">
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="BiteCheck AI">
+    <link rel="manifest" href="{% static 'manifest.json' %}">
+    <link rel="apple-touch-icon" href="{% static 'icons/icon-192.png' %}">
+</head>
+<body class="bg-gradient-to-b from-sky-50/70 via-slate-50 to-slate-100 min-h-screen text-slate-900 font-sans antialiased">
+
+    <div class="max-w-5xl mx-auto px-4 py-6">
+        <!-- Navigation Header -->
+        <nav class="bg-white/90 backdrop-blur-md border border-slate-200/80 rounded-2xl px-6 py-3.5 mb-8 shadow-sm flex items-center justify-between flex-wrap gap-4">
+            <a href="{% if user.is_authenticated %}{% url 'dashboard' %}{% else %}{% url 'home' %}{% endif %}" class="flex items-center gap-2.5 group text-decoration-none">
+                <div class="w-9 h-9 rounded-xl bg-gradient-to-tr from-sky-600 to-emerald-500 flex items-center justify-center text-white text-lg shadow-md shadow-sky-500/20 group-hover:scale-105 transition-transform">
+                    🥗
+                </div>
+                <span class="text-xl font-black text-slate-900 tracking-tight">BiteCheck <span class="text-sky-600">AI</span></span>
+            </a>
+            <div class="nav-links">
+                {% if user.is_authenticated %}
+                    <a href="{% url 'dashboard' %}" class="nav-link">Dashboard</a>
+                    <a href="{% url 'barcode_search' %}" class="nav-link active">Scan Product</a>
+                    <a href="{% url 'compare_products' %}" class="nav-link">Compare</a>
+                    <a href="{% url 'saved_products' %}" class="nav-link">Saved</a>
+                    <a href="{% url 'food_insights' %}" class="nav-link">Insights</a>
+                    <a href="{% url 'scan_history' %}" class="nav-link">History</a>
+                    <a href="{% url 'profile' %}" class="nav-link">Profile</a>
+                    <a href="{% url 'logout' %}" class="nav-link btn-logout">Logout ({{ user.username }})</a>
+                {% else %}
+                    <a href="{% url 'home' %}" class="nav-link">Home</a>
+                    <a href="{% url 'login' %}" class="nav-link">Login</a>
+                    <a href="{% url 'signup' %}" class="nav-link">Sign Up</a>
+                {% endif %}
+            </div>
+        </nav>
+
+        <!-- App Header -->
+        <header class="app-header">
+            <h1 class="app-title">BiteCheck AI</h1>
+            <p class="app-subtitle">Scan or enter a food product barcode to view ingredients, nutrition, and AI health impact analysis.</p>
+        </header>
+
+        {% if messages %}
+            <div class="messages">
+                {% for message in messages %}
+                    <div class="alert alert-{{ message.tags }}">{{ message }}</div>
+                {% endfor %}
+            </div>
+        {% endif %}
+
+        <!-- Search & Scanner Card -->
+        <div class="card">
+            <form id="search-form" class="search-form" autocomplete="off">
+                <div class="input-group">
+                    <input 
+                        type="text" 
+                        id="barcode-input" 
+                        class="input-field" 
+                        placeholder="Enter barcode number (e.g. 3017620422003)" 
+                        required
+                    />
+                    <button type="submit" id="search-btn" class="btn-primary">
+                        Search
+                    </button>
+                    <button type="button" id="start-scan-btn" class="btn-scan">
+                        📷 Scan Barcode
+                    </button>
+                </div>
+            </form>
+
+            <!-- Camera Scanner Container -->
+            <div id="scanner-container" class="scanner-container">
+                <div class="scanner-header">
+                    <span class="scanner-title">Point camera at product barcode</span>
+                    <button type="button" id="stop-scan-btn" class="btn-stop-camera">
+                        Stop Camera
+                    </button>
+                </div>
+                <div id="reader" class="reader-box"></div>
+            </div>
+
+            <!-- Scan Status / Error / Success Message -->
+            <div id="camera-status-msg" class="camera-status-msg"></div>
+
+            <!-- Loading Spinner & Indicator -->
+            <div id="loading-box" class="loading-box">
+                <span class="spinner"></span>
+                <span>Searching product...</span>
+            </div>
+
+            <!-- Error Message Alert -->
+            <div id="error-box" class="error-box"></div>
+        </div>
+
+        <!-- Product Result Card -->
+        <div id="result-card" class="card result-card">
+            <div class="product-header">
+                <div>
+                    <h2 id="product-name" class="product-title"></h2>
+                    <div id="product-brand" class="product-brand"></div>
+                    <div class="meta-row margin-top-xs">
+                        <div class="meta-item">Barcode: <span id="product-barcode"></span></div>
+                    </div>
+                </div>
+                <div class="product-actions-group" style="display: flex; gap: 0.5rem; flex-wrap: wrap; align-items: center;">
+                    {% if user.is_authenticated %}
+                        <button type="button" id="favorite-btn" class="btn-favorite">
+                            ☆ Save Product
+                        </button>
+                    {% endif %}
+                    <button type="button" id="reset-scan-btn" class="btn-reset-scan">
+                        🔄 Scan Another Product
+                    </button>
+                </div>
+            </div>
+
+            <!-- Ingredients -->
+            <div class="section-title">Ingredients</div>
+            <div id="ingredients" class="ingredients-box"></div>
+
+            <!-- Nutrition Facts -->
+            <div class="section-title">Nutrition per 100g</div>
+            <div class="nutrition-grid">
+                <div class="nutrition-item">
+                    <div class="nutrition-label">Calories</div>
+                    <div id="val-calories" class="nutrition-value">N/A</div>
+                </div>
+                <div class="nutrition-item">
+                    <div class="nutrition-label">Protein</div>
+                    <div id="val-protein" class="nutrition-value">N/A</div>
+                </div>
+                <div class="nutrition-item">
+                    <div class="nutrition-label">Carbohydrates</div>
+                    <div id="val-carbs" class="nutrition-value">N/A</div>
+                </div>
+                <div class="nutrition-item">
+                    <div class="nutrition-label">Total Fat</div>
+                    <div id="val-fat" class="nutrition-value">N/A</div>
+                </div>
+                <div class="nutrition-item">
+                    <div class="nutrition-label">Saturated Fat</div>
+                    <div id="val-sat-fat" class="nutrition-value">N/A</div>
+                </div>
+                <div class="nutrition-item">
+                    <div class="nutrition-label">Sugar</div>
+                    <div id="val-sugar" class="nutrition-value">N/A</div>
+                </div>
+                <div class="nutrition-item">
+                    <div class="nutrition-label">Fiber</div>
+                    <div id="val-fiber" class="nutrition-value">N/A</div>
+                </div>
+                <div class="nutrition-item">
+                    <div class="nutrition-label">Sodium</div>
+                    <div id="val-sodium" class="nutrition-value">N/A</div>
+                </div>
+            </div>
+
+            <!-- Nutrition Overview Chart -->
+            <div id="nutrition-chart-section" class="nutrition-chart-section margin-top-md" style="display: none;">
+                <div class="section-title">Nutrition Overview</div>
+                <div class="chart-wrapper">
+                    <canvas id="nutritionChartCanvas"></canvas>
+                </div>
+                <p class="chart-note">Values are shown per 100g based on available product information.</p>
+            </div>
+
+            <!-- Product Source Footer -->
+            <div id="product-source-footer" class="product-source-footer"></div>
+
+            <!-- AI Health Analysis Action -->
+            <div class="analysis-action-row">
+                <button type="button" id="analyze-btn" class="btn-secondary">
+                    Analyze Health Impact with AI
+                </button>
+                <div class="analysis-subtext">
+                    Get AI-powered guidance about the nutritional positives, concerns, possible body effects and consumption advice for this product.
+                </div>
+            </div>
+
+            <!-- Loading Indicator for Analysis -->
+            <div id="analysis-loading-box" class="loading-box">
+                <span class="spinner"></span>
+                <span>AI is analyzing the ingredients and nutrition information.</span>
+            </div>
+
+            <!-- Error Alert for Analysis -->
+            <div id="analysis-error-box" class="error-box"></div>
+
+            <!-- AI Analysis Results Container -->
+            <div id="analysis-container" class="analysis-container">
+                <!-- 1. Overall Rating -->
+                <div class="analysis-header">
+                    <div>
+                        <h3 class="analysis-title">AI Health & Nutrition Analysis</h3>
+                        <div class="ai-note">AI-generated nutrition guidance. Not a medical diagnosis.</div>
+                    </div>
+                    <div id="overall-rating-badge" class="rating-badge"></div>
+                </div>
+
+                <!-- 2. Summary -->
+                <div id="analysis-summary" class="analysis-summary"></div>
+
+                <!-- 3. Personalized Note -->
+                <div id="section-personalized" class="analysis-block personalized-block">
+                    <h4 class="block-title">Personalized Guidance</h4>
+                    <div id="analysis-personalized-note" class="personalized-note-text"></div>
+                </div>
+
+                <!-- 4. Positive Points -->
+                <div id="section-positives" class="analysis-block positive-block">
+                    <h4 class="block-title">Nutritional Positives</h4>
+                    <ul id="list-positives" class="analysis-list"></ul>
+                </div>
+
+                <!-- 5. Nutritional Concerns -->
+                <div id="section-concerns" class="analysis-block concern-block">
+                    <h4 class="block-title">Nutritional Concerns</h4>
+                    <ul id="list-concerns" class="analysis-list"></ul>
+                </div>
+
+                <!-- 6. Body Impacts -->
+                <div id="section-impacts" class="analysis-block impact-block">
+                    <h4 class="block-title">Body Impacts</h4>
+                    <ul id="list-impacts" class="analysis-list"></ul>
+                </div>
+
+                <!-- 7. Health Condition Guidance -->
+                <div id="section-condition-notes" class="analysis-block condition-block">
+                    <h4 class="block-title">Health Condition Guidance</h4>
+                    <ul id="list-condition-notes" class="analysis-list"></ul>
+                </div>
+
+                <!-- 8. Possible Long-Term Health Risks -->
+                <div id="section-risks" class="analysis-block risk-block">
+                    <h4 class="block-title">Possible Long-Term Health Risks</h4>
+                    <ul id="list-risks" class="analysis-list"></ul>
+                </div>
+
+                <!-- 9. Who Should Be Careful -->
+                <div id="section-caution" class="analysis-block caution-block">
+                    <h4 class="block-title">Who Should Be Careful</h4>
+                    <ul id="list-caution" class="analysis-list"></ul>
+                </div>
+
+                <!-- 10. Consumption Advice -->
+                <div id="section-advice" class="analysis-block advice-block">
+                    <h4 class="block-title">Consumption Advice</h4>
+                    <ul id="list-advice" class="analysis-list"></ul>
+                </div>
+
+                <!-- 11. Allergy Alert -->
+                <div id="allergy-alert-card" class="allergy-alert-card">
+                    <div class="allergy-alert-title">⚠️ Possible Allergy Alert</div>
+                    <div id="allergy-warning-text" class="allergy-alert-body"></div>
+                    <div class="allergy-alert-footer">Always verify allergen information on the product packaging before consumption.</div>
+                </div>
+
+                <!-- 12. Medical Disclaimer -->
+                <div id="analysis-disclaimer" class="analysis-disclaimer"></div>
+            </div>
+
+        </div>
+
+        <!-- Multi-column Footer -->
+        <footer class="bg-white rounded-3xl border border-slate-200/90 p-8 md:p-12 shadow-sm mt-8">
+            <div class="grid grid-cols-1 md:grid-cols-4 gap-8 mb-8 pb-8 border-b border-slate-100">
+                <div>
+                    <div class="flex items-center gap-2 mb-3">
+                        <div class="w-8 h-8 rounded-xl bg-gradient-to-tr from-sky-600 to-emerald-500 flex items-center justify-center text-white text-base font-black shadow-md shadow-sky-500/20">
+                            🥗
+                        </div>
+                        <span class="text-xl font-black text-slate-900 tracking-tight">BiteCheck <span class="text-sky-600">AI</span></span>
+                    </div>
+                    <p class="text-xs text-slate-500 leading-relaxed mb-4">
+                        Smart AI-powered packaged food analyzer. Decode ingredients, check nutrition, detect allergens, and make informed food choices.
+                    </p>
+                    <div class="flex items-center gap-2 flex-wrap">
+                        <span class="px-2.5 py-1 text-xs font-bold text-emerald-700 bg-emerald-50 border border-emerald-200 rounded-full">● Gemini AI 2.5</span>
+                        <span class="px-2.5 py-1 text-xs font-bold text-sky-700 bg-sky-50 border border-sky-200 rounded-full">Open Food Facts</span>
+                    </div>
+                </div>
+
+                <div>
+                    <h4 class="text-xs font-bold text-slate-900 uppercase tracking-wider mb-4">Quick Navigation</h4>
+                    <ul class="space-y-2 text-xs text-slate-600 font-medium">
+                        <li><a href="{% url 'dashboard' %}" class="hover:text-sky-600 transition-colors">Dashboard Analytics</a></li>
+                        <li><a href="{% url 'barcode_search' %}" class="hover:text-sky-600 transition-colors">Scan Barcode</a></li>
+                        <li><a href="{% url 'compare_products' %}" class="hover:text-sky-600 transition-colors">Compare 2 Products</a></li>
+                        <li><a href="{% url 'saved_products' %}" class="hover:text-sky-600 transition-colors">Saved Favorites</a></li>
+                        <li><a href="{% url 'food_insights' %}" class="hover:text-sky-600 transition-colors">My Food Insights</a></li>
+                        <li><a href="{% url 'scan_history' %}" class="hover:text-sky-600 transition-colors">Scan History</a></li>
+                    </ul>
+                </div>
+
+                <div>
+                    <h4 class="text-xs font-bold text-slate-900 uppercase tracking-wider mb-4">Health Intelligence</h4>
+                    <ul class="space-y-2 text-xs text-slate-600 font-medium">
+                        <li class="flex items-center gap-1.5"><span class="text-emerald-500 font-bold">✓</span> Gemini Ingredient Audit</li>
+                        <li class="flex items-center gap-1.5"><span class="text-emerald-500 font-bold">✓</span> Personal Allergen Alert</li>
+                        <li class="flex items-center gap-1.5"><span class="text-emerald-500 font-bold">✓</span> Health Rating Score</li>
+                        <li class="flex items-center gap-1.5"><span class="text-emerald-500 font-bold">✓</span> Macronutrient Breakdown</li>
+                        <li class="flex items-center gap-1.5"><span class="text-emerald-500 font-bold">✓</span> Health Condition Safety</li>
+                    </ul>
+                </div>
+
+                <div>
+                    <h4 class="text-xs font-bold text-slate-900 uppercase tracking-wider mb-4">Medical Disclaimer</h4>
+                    <p class="text-xs text-slate-500 leading-relaxed mb-3">
+                        BiteCheck AI provides educational nutrition information only. It is not intended to diagnose, treat, or replace professional medical advice.
+                    </p>
+                    <p class="text-xs font-semibold text-slate-700">
+                        Always check package labels if you have severe allergies.
+                    </p>
+                </div>
+            </div>
+
+            <div class="flex flex-col sm:flex-row items-center justify-between gap-4 text-xs text-slate-500 font-medium">
+                <p>© 2026 <strong>BiteCheck AI</strong>. Empowering Healthier Dietary Choices Every Day.</p>
+                <div class="flex items-center gap-4">
+                    <span class="hover:text-slate-800">Privacy Policy</span>
+                    <span>•</span>
+                    <span class="hover:text-slate-800">Terms of Service</span>
+                    <span>•</span>
+                    <span class="hover:text-slate-800">PWA Enabled</span>
+                </div>
+            </div>
+        </footer>
+
+    </div>
+
+    <!-- External JavaScript -->
+    <script src="{% static 'js/barcode_search.js' %}"></script>
+    <script src="{% static 'js/pwa_register.js' %}"></script>
+</body>
+</html>

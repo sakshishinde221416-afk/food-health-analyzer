@@ -1,0 +1,367 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>My Food Insights - BiteCheck AI</title>
+
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+
+    <!-- Chart.js CDN -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+
+    <!-- PWA & Mobile Meta Tags -->
+    <meta name="theme-color" content="#0066cc">
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="BiteCheck AI">
+    <link rel="manifest" href="{% static 'manifest.json' %}">
+    <link rel="apple-touch-icon" href="{% static 'icons/icon-192.png' %}">
+
+    <!-- External CSS -->
+    <link rel="stylesheet" href="{% static 'css/style.css' %}?v=3.0">
+</head>
+<body class="bg-gradient-to-b from-sky-50/70 via-slate-50 to-slate-100 min-h-screen text-slate-900 font-sans antialiased">
+
+    <div class="max-w-5xl mx-auto px-4 py-6">
+        <!-- Navigation Header -->
+        <nav class="bg-white/90 backdrop-blur-md border border-slate-200/80 rounded-2xl px-6 py-3.5 mb-8 shadow-sm flex items-center justify-between flex-wrap gap-4">
+            <a href="{% url 'dashboard' %}" class="flex items-center gap-2.5 group text-decoration-none">
+                <div class="w-9 h-9 rounded-xl bg-gradient-to-tr from-sky-600 to-emerald-500 flex items-center justify-center text-white text-lg shadow-md shadow-sky-500/20 group-hover:scale-105 transition-transform">
+                    🥗
+                </div>
+                <span class="text-xl font-black text-slate-900 tracking-tight">BiteCheck <span class="text-sky-600">AI</span></span>
+            </a>
+            <div class="nav-links">
+                <a href="{% url 'dashboard' %}" class="nav-link">Dashboard</a>
+                <a href="{% url 'barcode_search' %}" class="nav-link">Scan Product</a>
+                <a href="{% url 'compare_products' %}" class="nav-link">Compare</a>
+                <a href="{% url 'saved_products' %}" class="nav-link">Saved</a>
+                <a href="{% url 'food_insights' %}" class="nav-link active">Insights</a>
+                <a href="{% url 'scan_history' %}" class="nav-link">History</a>
+                <a href="{% url 'profile' %}" class="nav-link">Profile</a>
+                <a href="{% url 'logout' %}" class="nav-link btn-logout">Logout ({{ user.username }})</a>
+            </div>
+        </nav>
+
+        <!-- Page Header with Date Filter -->
+        <header class="app-header history-header-row">
+            <div>
+                <h1 class="app-title">My Food Insights</h1>
+                <p class="app-subtitle">Understand nutrition patterns, rating distributions, and average values from your scanned food products.</p>
+            </div>
+            <div class="filter-group">
+                <label for="date-range-select" class="filter-label">Filter Timeframe:</label>
+                <select id="date-range-select" class="input-field filter-select">
+                    <option value="7" {% if range_param == '7' %}selected{% endif %}>Last 7 Days</option>
+                    <option value="30" {% if range_param == '30' %}selected{% endif %}>Last 30 Days</option>
+                    <option value="all" {% if range_param == 'all' %}selected{% endif %}>All Time</option>
+                </select>
+            </div>
+        </header>
+
+        {% if messages %}
+            <div class="messages">
+                {% for message in messages %}
+                    <div class="alert alert-{{ message.tags }}">{{ message }}</div>
+                {% endfor %}
+            </div>
+        {% endif %}
+
+        {% if total_scans == 0 %}
+            <!-- EMPTY STATE -->
+            <div class="card empty-state-card margin-top-md">
+                <div class="empty-state-icon">📊</div>
+                <h2 class="empty-state-title">No insights available yet</h2>
+                <p class="empty-state-desc">Scan and analyze food products to build your personal nutrition insights for {{ date_range_label }}.</p>
+                <a href="{% url 'barcode_search' %}" class="btn-primary margin-top-md">📷 Scan Product</a>
+            </div>
+        {% else %}
+
+            <!-- 1. SUMMARY STATISTIC CARDS (4 Cards) -->
+            <div class="stat-cards-grid margin-top-md">
+                <div class="stat-card stat-card-total">
+                    <div class="stat-label">Products Scanned</div>
+                    <div class="stat-number">{{ total_scans }}</div>
+                </div>
+                <div class="stat-card stat-card-good">
+                    <div class="stat-label">Products Analyzed</div>
+                    <div class="stat-number">{{ analyzed_scans }}</div>
+                </div>
+                <div class="stat-card stat-card-moderate">
+                    <div class="stat-label">Saved Products</div>
+                    <div class="stat-number">{{ saved_products_count }}</div>
+                </div>
+                <div class="stat-card stat-card-limit">
+                    <div class="stat-label">Most Common Rating</div>
+                    <div class="stat-number rating-text-badge {% if most_common_rating == 'Good Choice' %}text-good{% elif most_common_rating == 'Limit Intake' %}text-limit{% elif most_common_rating == 'Moderate' %}text-moderate{% endif %}">
+                        {{ most_common_rating }}
+                    </div>
+                </div>
+            </div>
+
+            <!-- 2. NUTRITION AVERAGE SECTION -->
+            <section class="card section-card margin-top-md">
+                <div class="dashboard-section-header">
+                    <h2 class="section-heading">Average Nutrition of Your Scanned Products</h2>
+                </div>
+                <div class="insight-disclaimer-banner">
+                    📌 <strong>Average values of scanned packaged products per 100g</strong> — <em>This is NOT your personal dietary intake.</em>
+                </div>
+
+                <div class="nutrition-grid margin-top-sm">
+                    <div class="nutrition-item">
+                        <div class="nutrition-label">Calories</div>
+                        <div class="nutrition-value">{% if avg_calories %}{{ avg_calories }} kcal{% else %}N/A{% endif %}</div>
+                    </div>
+                    <div class="nutrition-item">
+                        <div class="nutrition-label">Protein</div>
+                        <div class="nutrition-value">{% if avg_protein %}{{ avg_protein }} g{% else %}N/A{% endif %}</div>
+                    </div>
+                    <div class="nutrition-item">
+                        <div class="nutrition-label">Carbohydrates</div>
+                        <div class="nutrition-value">{% if avg_carbs %}{{ avg_carbs }} g{% else %}N/A{% endif %}</div>
+                    </div>
+                    <div class="nutrition-item">
+                        <div class="nutrition-label">Total Fat</div>
+                        <div class="nutrition-value">{% if avg_fat %}{{ avg_fat }} g{% else %}N/A{% endif %}</div>
+                    </div>
+                    <div class="nutrition-item">
+                        <div class="nutrition-label">Saturated Fat</div>
+                        <div class="nutrition-value">{% if avg_sat_fat %}{{ avg_sat_fat }} g{% else %}N/A{% endif %}</div>
+                    </div>
+                    <div class="nutrition-item">
+                        <div class="nutrition-label">Sugar</div>
+                        <div class="nutrition-value">{% if avg_sugar %}{{ avg_sugar }} g{% else %}N/A{% endif %}</div>
+                    </div>
+                    <div class="nutrition-item">
+                        <div class="nutrition-label">Fiber</div>
+                        <div class="nutrition-value">{% if avg_fiber %}{{ avg_fiber }} g{% else %}N/A{% endif %}</div>
+                    </div>
+                    <div class="nutrition-item">
+                        <div class="nutrition-label">Sodium</div>
+                        <div class="nutrition-value">{% if avg_sodium %}{{ avg_sodium }} g{% else %}N/A{% endif %}</div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- 3. CHARTS GRID (Nutrition Bar Chart & Rating Doughnut Chart) -->
+            <div class="insights-charts-grid margin-top-md">
+                <!-- Bar Chart: Average Nutrition Overview -->
+                <div class="card section-card">
+                    <h3 class="card-subtitle-heading">Average Nutrition Overview</h3>
+                    <p class="chart-sublabel">Average grams per 100g across scanned unique products</p>
+                    <div class="chart-bar-container margin-top-sm">
+                        <canvas id="avgNutritionChartCanvas"></canvas>
+                    </div>
+                </div>
+
+                <!-- Doughnut Chart: Rating Distribution -->
+                <div class="card section-card">
+                    <h3 class="card-subtitle-heading">Rating Distribution</h3>
+                    <p class="chart-sublabel">Breakdown of AI health ratings for scanned items</p>
+                    {% if analyzed_scans > 0 %}
+                        <div class="chart-doughnut-wrapper margin-top-sm">
+                            <canvas id="ratingDoughnutCanvas"></canvas>
+                        </div>
+                    {% else %}
+                        <div class="empty-chart-text margin-top-md">
+                            No AI-analyzed products available to display rating distribution.
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+
+            <!-- 4. MOST SCANNED PRODUCTS (Top 5) -->
+            {% if top_scanned_items %}
+            <section class="card section-card margin-top-md">
+                <h2 class="section-heading">Most Scanned Products</h2>
+                <div class="top-products-list margin-top-sm">
+                    {% for item in top_scanned_items %}
+                        <div class="top-product-row">
+                            <div class="top-product-rank">#{{ forloop.counter }}</div>
+                            <div class="top-product-info">
+                                <div class="top-product-name">{{ item.product__product_name|default:"Unknown Product" }}</div>
+                                <div class="top-product-meta">Brand: {{ item.product__brand|default:"N/A" }} | Barcode: {{ item.product__barcode }}</div>
+                            </div>
+                            <div class="top-product-badge">
+                                {{ item.scan_count }} scan{% if item.scan_count > 1 %}s{% endif %}
+                            </div>
+                            <div class="top-product-actions">
+                                <a href="{% url 'barcode_search' %}?barcode={{ item.product__barcode }}" class="btn-sm btn-view-product">View Product</a>
+                            </div>
+                        </div>
+                    {% endfor %}
+                </div>
+            </section>
+            {% endif %}
+
+            <!-- 5. SMART RULE-BASED INSIGHTS -->
+            <section class="card section-card margin-top-md">
+                <h2 class="section-heading">Smart Nutrition Observations</h2>
+                <p class="section-subdesc">Transparent rule-based insights generated from your scanned product averages:</p>
+                <div class="rule-insights-box margin-top-sm">
+                    <ul class="rule-insights-list">
+                        {% for obs in rule_insights %}
+                            <li class="rule-insight-item">💡 {{ obs }}</li>
+                        {% endfor %}
+                    </ul>
+                </div>
+                <div class="insight-disclaimer-footer margin-top-xs">
+                    * Note: These observations reflect average properties of scanned packaged items per 100g and do not measure actual consumed food quantities.
+                </div>
+            </section>
+
+            <!-- 6. GEMINI AI INSIGHT SECTION -->
+            <section class="card section-card margin-top-md">
+                <div class="ai-header-row">
+                    <div>
+                        <h2 class="section-heading">AI Educational Nutrition Summary</h2>
+                        <p class="section-subdesc">Generate an AI-powered summary based strictly on aggregated, anonymous scan data for {{ date_range_label }}.</p>
+                    </div>
+                    <button type="button" id="generate-ai-btn" class="btn-secondary" data-range="{{ range_param }}">
+                        ✨ Generate AI Insights
+                    </button>
+                </div>
+
+                <!-- Loading Spinner -->
+                <div id="ai-loading-box" class="loading-box margin-top-md" style="display: none;">
+                    <span class="spinner"></span>
+                    <span>Analyzing aggregated nutrition patterns with AI...</span>
+                </div>
+
+                <!-- Error Alert -->
+                <div id="ai-error-box" class="error-box margin-top-md" style="display: none;"></div>
+
+                <!-- AI Output Display Cards -->
+                <div id="ai-insights-container" class="analysis-container margin-top-md" style="display: none;">
+                    <!-- AI Summary -->
+                    <div class="analysis-block summary-block">
+                        <h4 class="block-title">AI Summary</h4>
+                        <div id="ai-summary-text" class="analysis-summary-text"></div>
+                    </div>
+
+                    <!-- Positive Patterns -->
+                    <div id="section-ai-positives" class="analysis-block positive-block">
+                        <h4 class="block-title">Positive Nutritional Patterns</h4>
+                        <ul id="list-ai-positives" class="analysis-list"></ul>
+                    </div>
+
+                    <!-- Areas to Consider -->
+                    <div id="section-ai-concerns" class="analysis-block concern-block">
+                        <h4 class="block-title">Areas to Consider</h4>
+                        <ul id="list-ai-concerns" class="analysis-list"></ul>
+                    </div>
+
+                    <!-- Shopping Tips -->
+                    <div id="section-ai-shopping" class="analysis-block advice-block">
+                        <h4 class="block-title">Shopping & Selection Tips</h4>
+                        <ul id="list-ai-shopping" class="analysis-list"></ul>
+                    </div>
+
+                    <!-- Comparison Tip -->
+                    <div id="section-ai-comparison" class="analysis-block impact-block">
+                        <h4 class="block-title">Comparison Guidance</h4>
+                        <div id="ai-comparison-text" class="personalized-note-text"></div>
+                    </div>
+
+                    <!-- Disclaimer Card -->
+                    <div id="ai-disclaimer-box" class="analysis-disclaimer margin-top-sm"></div>
+                </div>
+            </section>
+
+        {% endif %}
+
+        <!-- Multi-column Footer -->
+        <footer class="bg-white rounded-3xl border border-slate-200/90 p-8 md:p-12 shadow-sm mt-8">
+            <div class="grid grid-cols-1 md:grid-cols-4 gap-8 mb-8 pb-8 border-b border-slate-100">
+                <div>
+                    <div class="flex items-center gap-2 mb-3">
+                        <div class="w-8 h-8 rounded-xl bg-gradient-to-tr from-sky-600 to-emerald-500 flex items-center justify-center text-white text-base font-black shadow-md shadow-sky-500/20">
+                            🥗
+                        </div>
+                        <span class="text-xl font-black text-slate-900 tracking-tight">BiteCheck <span class="text-sky-600">AI</span></span>
+                    </div>
+                    <p class="text-xs text-slate-500 leading-relaxed mb-4">
+                        Smart AI-powered packaged food analyzer. Decode ingredients, check nutrition, detect allergens, and make informed food choices.
+                    </p>
+                    <div class="flex items-center gap-2 flex-wrap">
+                        <span class="px-2.5 py-1 text-xs font-bold text-emerald-700 bg-emerald-50 border border-emerald-200 rounded-full">● Gemini AI 2.5</span>
+                        <span class="px-2.5 py-1 text-xs font-bold text-sky-700 bg-sky-50 border border-sky-200 rounded-full">Open Food Facts</span>
+                    </div>
+                </div>
+
+                <div>
+                    <h4 class="text-xs font-bold text-slate-900 uppercase tracking-wider mb-4">Quick Navigation</h4>
+                    <ul class="space-y-2 text-xs text-slate-600 font-medium">
+                        <li><a href="{% url 'dashboard' %}" class="hover:text-sky-600 transition-colors">Dashboard Analytics</a></li>
+                        <li><a href="{% url 'barcode_search' %}" class="hover:text-sky-600 transition-colors">Scan Barcode</a></li>
+                        <li><a href="{% url 'compare_products' %}" class="hover:text-sky-600 transition-colors">Compare 2 Products</a></li>
+                        <li><a href="{% url 'saved_products' %}" class="hover:text-sky-600 transition-colors">Saved Favorites</a></li>
+                        <li><a href="{% url 'food_insights' %}" class="hover:text-sky-600 transition-colors">My Food Insights</a></li>
+                        <li><a href="{% url 'scan_history' %}" class="hover:text-sky-600 transition-colors">Scan History</a></li>
+                    </ul>
+                </div>
+
+                <div>
+                    <h4 class="text-xs font-bold text-slate-900 uppercase tracking-wider mb-4">Health Intelligence</h4>
+                    <ul class="space-y-2 text-xs text-slate-600 font-medium">
+                        <li class="flex items-center gap-1.5"><span class="text-emerald-500 font-bold">✓</span> Gemini Ingredient Audit</li>
+                        <li class="flex items-center gap-1.5"><span class="text-emerald-500 font-bold">✓</span> Personal Allergen Alert</li>
+                        <li class="flex items-center gap-1.5"><span class="text-emerald-500 font-bold">✓</span> Health Rating Score</li>
+                        <li class="flex items-center gap-1.5"><span class="text-emerald-500 font-bold">✓</span> Macronutrient Breakdown</li>
+                        <li class="flex items-center gap-1.5"><span class="text-emerald-500 font-bold">✓</span> Health Condition Safety</li>
+                    </ul>
+                </div>
+
+                <div>
+                    <h4 class="text-xs font-bold text-slate-900 uppercase tracking-wider mb-4">Medical Disclaimer</h4>
+                    <p class="text-xs text-slate-500 leading-relaxed mb-3">
+                        BiteCheck AI provides educational nutrition information only. It is not intended to diagnose, treat, or replace professional medical advice.
+                    </p>
+                    <p class="text-xs font-semibold text-slate-700">
+                        Always check package labels if you have severe allergies.
+                    </p>
+                </div>
+            </div>
+
+            <div class="flex flex-col sm:flex-row items-center justify-between gap-4 text-xs text-slate-500 font-medium">
+                <p>© 2026 <strong>BiteCheck AI</strong>. Empowering Healthier Dietary Choices Every Day.</p>
+                <div class="flex items-center gap-4">
+                    <span class="hover:text-slate-800">Privacy Policy</span>
+                    <span>•</span>
+                    <span class="hover:text-slate-800">Terms of Service</span>
+                    <span>•</span>
+                    <span class="hover:text-slate-800">PWA Enabled</span>
+                </div>
+            </div>
+        </footer>
+
+    </div>
+
+    <!-- Pass backend statistics to JS safely -->
+    <script>
+        window.INSIGHTS_DATA = {
+            avgProtein: parseFloat("{{ avg_protein|default:0 }}") || 0,
+            avgCarbs: parseFloat("{{ avg_carbs|default:0 }}") || 0,
+            avgFat: parseFloat("{{ avg_fat|default:0 }}") || 0,
+            avgSugar: parseFloat("{{ avg_sugar|default:0 }}") || 0,
+            avgFiber: parseFloat("{{ avg_fiber|default:0 }}") || 0,
+            ratingGood: parseInt("{{ rating_counts.good_choice|default:0 }}") || 0,
+            ratingModerate: parseInt("{{ rating_counts.moderate|default:0 }}") || 0,
+            ratingLimit: parseInt("{{ rating_counts.limit_intake|default:0 }}") || 0,
+            hasAnalyzed: parseInt("{{ analyzed_scans|default:0 }}") > 0
+        };
+    </script>
+    <script src="{% static 'js/food_insights.js' %}"></script>
+    <script src="{% static 'js/pwa_register.js' %}"></script>
+</body>
+</html>

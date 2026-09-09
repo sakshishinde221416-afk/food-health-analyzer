@@ -1,0 +1,279 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>My Profile - BiteCheck AI</title>
+
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+
+    <!-- External CSS -->
+    <link rel="stylesheet" href="{% static 'css/style.css' %}?v=3.0">
+
+    <!-- PWA & Mobile Meta Tags -->
+    <meta name="theme-color" content="#0066cc">
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="BiteCheck AI">
+    <link rel="manifest" href="{% static 'manifest.json' %}">
+    <link rel="apple-touch-icon" href="{% static 'icons/icon-192.png' %}">
+</head>
+<body class="bg-gradient-to-b from-sky-50/70 via-slate-50 to-slate-100 min-h-screen text-slate-900 font-sans antialiased">
+
+    <div class="max-w-5xl mx-auto px-4 py-6">
+        <!-- Navigation Header -->
+        <nav class="bg-white/90 backdrop-blur-md border border-slate-200/80 rounded-2xl px-6 py-3.5 mb-8 shadow-sm flex items-center justify-between flex-wrap gap-4">
+            <a href="{% if user.is_authenticated %}{% url 'dashboard' %}{% else %}{% url 'home' %}{% endif %}" class="flex items-center gap-2.5 group text-decoration-none">
+                <div class="w-9 h-9 rounded-xl bg-gradient-to-tr from-sky-600 to-emerald-500 flex items-center justify-center text-white text-lg shadow-md shadow-sky-500/20 group-hover:scale-105 transition-transform">
+                    🥗
+                </div>
+                <span class="text-xl font-black text-slate-900 tracking-tight">BiteCheck <span class="text-sky-600">AI</span></span>
+            </a>
+            <div class="nav-links">
+                {% if user.is_authenticated %}
+                    <a href="{% url 'dashboard' %}" class="nav-link">Dashboard</a>
+                    <a href="{% url 'barcode_search' %}" class="nav-link">Scan Product</a>
+                    <a href="{% url 'compare_products' %}" class="nav-link">Compare</a>
+                    <a href="{% url 'saved_products' %}" class="nav-link">Saved</a>
+                    <a href="{% url 'food_insights' %}" class="nav-link">Insights</a>
+                    <a href="{% url 'scan_history' %}" class="nav-link">History</a>
+                    <a href="{% url 'profile' %}" class="nav-link active">Profile</a>
+                    <a href="{% url 'logout' %}" class="nav-link btn-logout">Logout ({{ user.username }})</a>
+                {% else %}
+                    <a href="{% url 'home' %}" class="nav-link">Home</a>
+                    <a href="{% url 'login' %}" class="nav-link">Login</a>
+                    <a href="{% url 'signup' %}" class="nav-link">Sign Up</a>
+                {% endif %}
+            </div>
+        </nav>
+
+        <!-- Page Header -->
+        <header class="app-header">
+            <h1 class="app-title">My Profile</h1>
+            <p class="app-subtitle">Complete your profile to receive more personalized food guidance.</p>
+        </header>
+
+        {% if messages %}
+            <div class="messages">
+                {% for message in messages %}
+                    <div class="alert alert-{{ message.tags }}">{{ message }}</div>
+                {% endfor %}
+            </div>
+        {% endif %}
+
+        <!-- Profile Form Card -->
+        <div class="card profile-card">
+            <div class="profile-header">
+                <div>
+                    <h2 class="auth-title">{{ user.username }}</h2>
+                    <p class="auth-subtitle">Account Email: {{ user.email }}</p>
+                </div>
+            </div>
+
+            <form method="POST" action="{% url 'profile' %}" class="form-grid">
+                {% csrf_token %}
+
+                <!-- SECTION A: Basic Information -->
+                <div class="profile-section">
+                    <h3 class="section-title">Section A: Basic Information</h3>
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="age" class="form-label">Age (years)</label>
+                            <input type="number" id="age" name="age" class="input-field {% if errors.age %}input-error{% endif %}" value="{{ profile.age|default:'' }}" placeholder="e.g. 28">
+                            {% if errors.age %}
+                                <div class="field-error-text">{{ errors.age }}</div>
+                            {% endif %}
+                        </div>
+
+                        <div class="form-group">
+                            <label for="gender" class="form-label">Gender</label>
+                            <select id="gender" name="gender" class="input-field select-field">
+                                <option value="" {% if not profile.gender %}selected{% endif %}>Select Gender</option>
+                                <option value="Male" {% if profile.gender == "Male" %}selected{% endif %}>Male</option>
+                                <option value="Female" {% if profile.gender == "Female" %}selected{% endif %}>Female</option>
+                                <option value="Other" {% if profile.gender == "Other" %}selected{% endif %}>Other</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <div class="form-row margin-top-sm">
+                        <div class="form-group">
+                            <label for="height_cm" class="form-label">Height (cm)</label>
+                            <input type="number" step="0.1" id="height_cm" name="height_cm" class="input-field {% if errors.height_cm %}input-error{% endif %}" value="{{ profile.height_cm|default:'' }}" placeholder="e.g. 175.5">
+                            {% if errors.height_cm %}
+                                <div class="field-error-text">{{ errors.height_cm }}</div>
+                            {% endif %}
+                        </div>
+
+                        <div class="form-group">
+                            <label for="weight_kg" class="form-label">Weight (kg)</label>
+                            <input type="number" step="0.1" id="weight_kg" name="weight_kg" class="input-field {% if errors.weight_kg %}input-error{% endif %}" value="{{ profile.weight_kg|default:'' }}" placeholder="e.g. 70.0">
+                            {% if errors.weight_kg %}
+                                <div class="field-error-text">{{ errors.weight_kg }}</div>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+
+                <!-- SECTION B: Food Preference -->
+                <div class="profile-section margin-top-md">
+                    <h3 class="section-title">Section B: Food Preference</h3>
+                    <div class="form-group">
+                        <label for="dietary_preference" class="form-label">Dietary Preference</label>
+                        <select id="dietary_preference" name="dietary_preference" class="input-field select-field">
+                            <option value="" {% if not profile.dietary_preference %}selected{% endif %}>None / Standard</option>
+                            <option value="Vegetarian" {% if profile.dietary_preference == "Vegetarian" %}selected{% endif %}>Vegetarian</option>
+                            <option value="Vegan" {% if profile.dietary_preference == "Vegan" %}selected{% endif %}>Vegan</option>
+                            <option value="Eggetarian" {% if profile.dietary_preference == "Eggetarian" %}selected{% endif %}>Eggetarian</option>
+                            <option value="Non-Vegetarian" {% if profile.dietary_preference == "Non-Vegetarian" %}selected{% endif %}>Non-Vegetarian</option>
+                            <option value="Keto" {% if profile.dietary_preference == "Keto" %}selected{% endif %}>Keto / Low Carb</option>
+                            <option value="Gluten-Free" {% if profile.dietary_preference == "Gluten-Free" %}selected{% endif %}>Gluten-Free</option>
+                            <option value="Dairy-Free" {% if profile.dietary_preference == "Dairy-Free" %}selected{% endif %}>Dairy-Free</option>
+                            <option value="Halal" {% if profile.dietary_preference == "Halal" %}selected{% endif %}>Halal</option>
+                            <option value="Other" {% if profile.dietary_preference == "Other" %}selected{% endif %}>Other</option>
+                        </select>
+                    </div>
+                </div>
+
+                <!-- SECTION C: Health Conditions -->
+                <div class="profile-section margin-top-md">
+                    <h3 class="section-title">Section C: Health Conditions</h3>
+                    <div class="info-note">
+                        Only select conditions that you already know or have been diagnosed with.
+                    </div>
+
+                    <div class="checkbox-grid">
+                        <label class="checkbox-label">
+                            <input type="checkbox" name="has_diabetes" {% if profile.has_diabetes %}checked{% endif %}>
+                            <span>Diabetes</span>
+                        </label>
+
+                        <label class="checkbox-label">
+                            <input type="checkbox" name="has_hypertension" {% if profile.has_hypertension %}checked{% endif %}>
+                            <span>Hypertension (High Blood Pressure)</span>
+                        </label>
+
+                        <label class="checkbox-label">
+                            <input type="checkbox" name="has_high_cholesterol" {% if profile.has_high_cholesterol %}checked{% endif %}>
+                            <span>High Cholesterol</span>
+                        </label>
+
+                        <label class="checkbox-label">
+                            <input type="checkbox" name="has_heart_condition" {% if profile.has_heart_condition %}checked{% endif %}>
+                            <span>Heart Condition</span>
+                        </label>
+                    </div>
+                </div>
+
+                <!-- SECTION D: Food Allergies -->
+                <div class="profile-section margin-top-md">
+                    <h3 class="section-title">Section D: Food Allergies</h3>
+                    <div class="info-note">
+                        Enter known food allergies separated by commas.
+                    </div>
+                    <div class="form-group">
+                        <label for="food_allergies" class="form-label">Food Allergies</label>
+                        <textarea id="food_allergies" name="food_allergies" class="input-field textarea-field" rows="2" placeholder="Peanuts, milk, soy">{{ profile.food_allergies|default:'' }}</textarea>
+                    </div>
+                </div>
+
+                <!-- SECTION E: Other Health Notes -->
+                <div class="profile-section margin-top-md">
+                    <h3 class="section-title">Section E: Other Health Notes</h3>
+                    <div class="info-note">
+                        Optional. Add only information you want the app to consider for personalized food guidance.
+                    </div>
+                    <div class="form-group">
+                        <label for="other_health_notes" class="form-label">Other Health Notes</label>
+                        <textarea id="other_health_notes" name="other_health_notes" class="input-field textarea-field" rows="2" placeholder="e.g. Low sodium preference, lactose sensitive">{{ profile.other_health_notes|default:'' }}</textarea>
+                    </div>
+                </div>
+
+                <!-- Privacy Note -->
+                <div class="privacy-note margin-top-md">
+                    🔒 Your profile information is used only to personalize food analysis within this application.
+                </div>
+
+                <button type="submit" class="btn-primary full-width margin-top-md">Save Profile</button>
+            </form>
+        </div>
+
+        <!-- Multi-column Footer -->
+        <footer class="bg-white rounded-3xl border border-slate-200/90 p-8 md:p-12 shadow-sm mt-8">
+            <div class="grid grid-cols-1 md:grid-cols-4 gap-8 mb-8 pb-8 border-b border-slate-100">
+                <div>
+                    <div class="flex items-center gap-2 mb-3">
+                        <div class="w-8 h-8 rounded-xl bg-gradient-to-tr from-sky-600 to-emerald-500 flex items-center justify-center text-white text-base font-black shadow-md shadow-sky-500/20">
+                            🥗
+                        </div>
+                        <span class="text-xl font-black text-slate-900 tracking-tight">BiteCheck <span class="text-sky-600">AI</span></span>
+                    </div>
+                    <p class="text-xs text-slate-500 leading-relaxed mb-4">
+                        Smart AI-powered packaged food analyzer. Decode ingredients, check nutrition, detect allergens, and make informed food choices.
+                    </p>
+                    <div class="flex items-center gap-2 flex-wrap">
+                        <span class="px-2.5 py-1 text-xs font-bold text-emerald-700 bg-emerald-50 border border-emerald-200 rounded-full">● Gemini AI 2.5</span>
+                        <span class="px-2.5 py-1 text-xs font-bold text-sky-700 bg-sky-50 border border-sky-200 rounded-full">Open Food Facts</span>
+                    </div>
+                </div>
+
+                <div>
+                    <h4 class="text-xs font-bold text-slate-900 uppercase tracking-wider mb-4">Quick Navigation</h4>
+                    <ul class="space-y-2 text-xs text-slate-600 font-medium">
+                        <li><a href="{% url 'dashboard' %}" class="hover:text-sky-600 transition-colors">Dashboard Analytics</a></li>
+                        <li><a href="{% url 'barcode_search' %}" class="hover:text-sky-600 transition-colors">Scan Barcode</a></li>
+                        <li><a href="{% url 'compare_products' %}" class="hover:text-sky-600 transition-colors">Compare 2 Products</a></li>
+                        <li><a href="{% url 'saved_products' %}" class="hover:text-sky-600 transition-colors">Saved Favorites</a></li>
+                        <li><a href="{% url 'food_insights' %}" class="hover:text-sky-600 transition-colors">My Food Insights</a></li>
+                        <li><a href="{% url 'scan_history' %}" class="hover:text-sky-600 transition-colors">Scan History</a></li>
+                    </ul>
+                </div>
+
+                <div>
+                    <h4 class="text-xs font-bold text-slate-900 uppercase tracking-wider mb-4">Health Intelligence</h4>
+                    <ul class="space-y-2 text-xs text-slate-600 font-medium">
+                        <li class="flex items-center gap-1.5"><span class="text-emerald-500 font-bold">✓</span> Gemini Ingredient Audit</li>
+                        <li class="flex items-center gap-1.5"><span class="text-emerald-500 font-bold">✓</span> Personal Allergen Alert</li>
+                        <li class="flex items-center gap-1.5"><span class="text-emerald-500 font-bold">✓</span> Health Rating Score</li>
+                        <li class="flex items-center gap-1.5"><span class="text-emerald-500 font-bold">✓</span> Macronutrient Breakdown</li>
+                        <li class="flex items-center gap-1.5"><span class="text-emerald-500 font-bold">✓</span> Health Condition Safety</li>
+                    </ul>
+                </div>
+
+                <div>
+                    <h4 class="text-xs font-bold text-slate-900 uppercase tracking-wider mb-4">Medical Disclaimer</h4>
+                    <p class="text-xs text-slate-500 leading-relaxed mb-3">
+                        BiteCheck AI provides educational nutrition information only. It is not intended to diagnose, treat, or replace professional medical advice.
+                    </p>
+                    <p class="text-xs font-semibold text-slate-700">
+                        Always check package labels if you have severe allergies.
+                    </p>
+                </div>
+            </div>
+
+            <div class="flex flex-col sm:flex-row items-center justify-between gap-4 text-xs text-slate-500 font-medium">
+                <p>© 2026 <strong>BiteCheck AI</strong>. Empowering Healthier Dietary Choices Every Day.</p>
+                <div class="flex items-center gap-4">
+                    <span class="hover:text-slate-800">Privacy Policy</span>
+                    <span>•</span>
+                    <span class="hover:text-slate-800">Terms of Service</span>
+                    <span>•</span>
+                    <span class="hover:text-slate-800">PWA Enabled</span>
+                </div>
+            </div>
+        </footer>
+
+    </div>
+
+    <!-- PWA Registration -->
+    <script src="{% static 'js/pwa_register.js' %}"></script>
+</body>
+</html>

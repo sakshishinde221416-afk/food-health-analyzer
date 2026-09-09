@@ -1,0 +1,24 @@
+{
+  "name": "BiteCheck AI - Food Health Intelligence",
+  "short_name": "BiteCheck AI",
+  "description": "Scan packaged food products and understand their ingredients, nutrition, and possible health impact using AI.",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#f8fafc",
+  "theme_color": "#0066cc",
+  "orientation": "portrait-primary",
+  "icons": [
+    {
+      "src": "/static/icons/icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "/static/icons/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ]
+}

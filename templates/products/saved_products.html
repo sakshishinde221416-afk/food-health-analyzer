@@ -1,0 +1,244 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Saved Products - BiteCheck AI</title>
+
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+
+    <!-- PWA & Mobile Meta Tags -->
+    <meta name="theme-color" content="#0066cc">
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="BiteCheck AI">
+    <link rel="manifest" href="{% static 'manifest.json' %}">
+    <link rel="apple-touch-icon" href="{% static 'icons/icon-192.png' %}">
+
+    <!-- External CSS -->
+    <link rel="stylesheet" href="{% static 'css/style.css' %}?v=3.0">
+</head>
+<body class="bg-gradient-to-b from-sky-50/70 via-slate-50 to-slate-100 min-h-screen text-slate-900 font-sans antialiased">
+
+    <div class="max-w-5xl mx-auto px-4 py-6">
+        <!-- Navigation Header -->
+        <nav class="bg-white/90 backdrop-blur-md border border-slate-200/80 rounded-2xl px-6 py-3.5 mb-8 shadow-sm flex items-center justify-between flex-wrap gap-4">
+            <a href="{% if user.is_authenticated %}{% url 'dashboard' %}{% else %}{% url 'home' %}{% endif %}" class="flex items-center gap-2.5 group text-decoration-none">
+                <div class="w-9 h-9 rounded-xl bg-gradient-to-tr from-sky-600 to-emerald-500 flex items-center justify-center text-white text-lg shadow-md shadow-sky-500/20 group-hover:scale-105 transition-transform">
+                    🥗
+                </div>
+                <span class="text-xl font-black text-slate-900 tracking-tight">BiteCheck <span class="text-sky-600">AI</span></span>
+            </a>
+            <div class="nav-links">
+                {% if user.is_authenticated %}
+                    <a href="{% url 'dashboard' %}" class="nav-link">Dashboard</a>
+                    <a href="{% url 'barcode_search' %}" class="nav-link">Scan Product</a>
+                    <a href="{% url 'compare_products' %}" class="nav-link">Compare</a>
+                    <a href="{% url 'saved_products' %}" class="nav-link active">Saved</a>
+                    <a href="{% url 'food_insights' %}" class="nav-link">Insights</a>
+                    <a href="{% url 'scan_history' %}" class="nav-link">History</a>
+                    <a href="{% url 'profile' %}" class="nav-link">Profile</a>
+                    <a href="{% url 'logout' %}" class="nav-link btn-logout">Logout ({{ user.username }})</a>
+                {% else %}
+                    <a href="{% url 'home' %}" class="nav-link">Home</a>
+                    <a href="{% url 'login' %}" class="nav-link">Login</a>
+                    <a href="{% url 'signup' %}" class="nav-link">Sign Up</a>
+                {% endif %}
+            </div>
+        </nav>
+
+        <!-- Page Header -->
+        <header class="app-header">
+            <h1 class="app-title">Saved Products</h1>
+            <p class="app-subtitle">Review and compare packaged food products you have saved for later.</p>
+        </header>
+
+        {% if messages %}
+            <div class="messages">
+                {% for message in messages %}
+                    <div class="alert alert-{{ message.tags }}">{{ message }}</div>
+                {% endfor %}
+            </div>
+        {% endif %}
+
+        {% if page_obj.object_list %}
+            <div class="saved-products-list">
+                {% for item in page_obj %}
+                    <div class="card saved-product-card">
+                        <div class="saved-card-header">
+                            <div>
+                                <h3 class="saved-product-title">{{ item.product.product_name }}</h3>
+                                {% if item.product.brand %}
+                                    <div class="saved-brand">Brand: {{ item.product.brand }}</div>
+                                {% endif %}
+                            </div>
+                            <div class="saved-date">Saved {{ item.created_at|date:"M d, Y" }}</div>
+                        </div>
+
+                        <div class="saved-meta">
+                            <span><strong>Barcode:</strong> {{ item.product.barcode }}</span>
+                            {% if item.product.calories is not None %}
+                                <span><strong>Calories:</strong> {{ item.product.calories }} kcal / 100g</span>
+                            {% endif %}
+                        </div>
+
+                        <div class="saved-nutrition-pills margin-top-xs">
+                            {% if item.product.protein is not None %}
+                                <span class="nutr-pill">Protein: {{ item.product.protein }}g</span>
+                            {% endif %}
+                            {% if item.product.carbohydrates is not None %}
+                                <span class="nutr-pill">Carbs: {{ item.product.carbohydrates }}g</span>
+                            {% endif %}
+                            {% if item.product.fat is not None %}
+                                <span class="nutr-pill">Fat: {{ item.product.fat }}g</span>
+                            {% endif %}
+                            {% if item.product.sugar is not None %}
+                                <span class="nutr-pill">Sugar: {{ item.product.sugar }}g</span>
+                            {% endif %}
+                        </div>
+
+                        <div class="saved-card-footer margin-top-md">
+                            <div class="saved-left-actions">
+                                <a href="{% url 'barcode_search' %}?barcode={{ item.product.barcode }}" class="btn-view-product btn-sm">
+                                    View Product
+                                </a>
+                                <a href="{% url 'compare_products' %}?barcode_a={{ item.product.barcode }}" class="btn-secondary btn-sm">
+                                    ⚖️ Compare
+                                </a>
+                            </div>
+
+                            <form method="POST" action="{% url 'toggle_favorite' item.product.barcode %}" class="inline-form">
+                                {% csrf_token %}
+                                <input type="hidden" name="next" value="{% url 'saved_products' %}">
+                                <button type="submit" class="btn-danger btn-sm">
+                                    Remove
+                                </button>
+                            </form>
+                        </div>
+                    </div>
+                {% endfor %}
+            </div>
+
+            <!-- Built-in Pagination Controls -->
+            {% if page_obj.paginator.num_pages > 1 %}
+                <div class="pagination-container margin-top-md">
+                    <div class="pagination-info">
+                        Page {{ page_obj.number }} of {{ page_obj.paginator.num_pages }}
+                        <span class="pagination-count">({{ page_obj.paginator.count }} total saved products)</span>
+                    </div>
+
+                    <div class="pagination-links">
+                        {% if page_obj.has_previous %}
+                            <a href="?page={{ page_obj.previous_page_number }}" class="pagination-btn">
+                                &laquo; Previous
+                            </a>
+                        {% else %}
+                            <span class="pagination-btn disabled">&laquo; Previous</span>
+                        {% endif %}
+
+                        {% for p in page_obj.paginator.page_range %}
+                            {% if p == page_obj.number %}
+                                <span class="pagination-number active">{{ p }}</span>
+                            {% elif p >= page_obj.number|add:"-2" and p <= page_obj.number|add:"2" %}
+                                <a href="?page={{ p }}" class="pagination-number">{{ p }}</a>
+                            {% endif %}
+                        {% endfor %}
+
+                        {% if page_obj.has_next %}
+                            <a href="?page={{ page_obj.next_page_number }}" class="pagination-btn">
+                                Next &raquo;
+                            </a>
+                        {% else %}
+                            <span class="pagination-btn disabled">Next &raquo;</span>
+                        {% endif %}
+                    </div>
+                </div>
+            {% endif %}
+
+        {% else %}
+            <div class="card empty-history-card">
+                <div class="empty-icon">⭐</div>
+                <h3 class="empty-title margin-top-xs">No saved products yet.</h3>
+                <p class="empty-history-text margin-top-xs">Save products you want to review or compare later.</p>
+                <a href="{% url 'barcode_search' %}" class="btn-primary margin-top-md inline-btn">Scan Product</a>
+            </div>
+        {% endif %}
+
+        <!-- Multi-column Footer -->
+        <footer class="bg-white rounded-3xl border border-slate-200/90 p-8 md:p-12 shadow-sm mt-8">
+            <div class="grid grid-cols-1 md:grid-cols-4 gap-8 mb-8 pb-8 border-b border-slate-100">
+                <div>
+                    <div class="flex items-center gap-2 mb-3">
+                        <div class="w-8 h-8 rounded-xl bg-gradient-to-tr from-sky-600 to-emerald-500 flex items-center justify-center text-white text-base font-black shadow-md shadow-sky-500/20">
+                            🥗
+                        </div>
+                        <span class="text-xl font-black text-slate-900 tracking-tight">BiteCheck <span class="text-sky-600">AI</span></span>
+                    </div>
+                    <p class="text-xs text-slate-500 leading-relaxed mb-4">
+                        Smart AI-powered packaged food analyzer. Decode ingredients, check nutrition, detect allergens, and make informed food choices.
+                    </p>
+                    <div class="flex items-center gap-2 flex-wrap">
+                        <span class="px-2.5 py-1 text-xs font-bold text-emerald-700 bg-emerald-50 border border-emerald-200 rounded-full">● Gemini AI 2.5</span>
+                        <span class="px-2.5 py-1 text-xs font-bold text-sky-700 bg-sky-50 border border-sky-200 rounded-full">Open Food Facts</span>
+                    </div>
+                </div>
+
+                <div>
+                    <h4 class="text-xs font-bold text-slate-900 uppercase tracking-wider mb-4">Quick Navigation</h4>
+                    <ul class="space-y-2 text-xs text-slate-600 font-medium">
+                        <li><a href="{% url 'dashboard' %}" class="hover:text-sky-600 transition-colors">Dashboard Analytics</a></li>
+                        <li><a href="{% url 'barcode_search' %}" class="hover:text-sky-600 transition-colors">Scan Barcode</a></li>
+                        <li><a href="{% url 'compare_products' %}" class="hover:text-sky-600 transition-colors">Compare 2 Products</a></li>
+                        <li><a href="{% url 'saved_products' %}" class="hover:text-sky-600 transition-colors">Saved Favorites</a></li>
+                        <li><a href="{% url 'food_insights' %}" class="hover:text-sky-600 transition-colors">My Food Insights</a></li>
+                        <li><a href="{% url 'scan_history' %}" class="hover:text-sky-600 transition-colors">Scan History</a></li>
+                    </ul>
+                </div>
+
+                <div>
+                    <h4 class="text-xs font-bold text-slate-900 uppercase tracking-wider mb-4">Health Intelligence</h4>
+                    <ul class="space-y-2 text-xs text-slate-600 font-medium">
+                        <li class="flex items-center gap-1.5"><span class="text-emerald-500 font-bold">✓</span> Gemini Ingredient Audit</li>
+                        <li class="flex items-center gap-1.5"><span class="text-emerald-500 font-bold">✓</span> Personal Allergen Alert</li>
+                        <li class="flex items-center gap-1.5"><span class="text-emerald-500 font-bold">✓</span> Health Rating Score</li>
+                        <li class="flex items-center gap-1.5"><span class="text-emerald-500 font-bold">✓</span> Macronutrient Breakdown</li>
+                        <li class="flex items-center gap-1.5"><span class="text-emerald-500 font-bold">✓</span> Health Condition Safety</li>
+                    </ul>
+                </div>
+
+                <div>
+                    <h4 class="text-xs font-bold text-slate-900 uppercase tracking-wider mb-4">Medical Disclaimer</h4>
+                    <p class="text-xs text-slate-500 leading-relaxed mb-3">
+                        BiteCheck AI provides educational nutrition information only. It is not intended to diagnose, treat, or replace professional medical advice.
+                    </p>
+                    <p class="text-xs font-semibold text-slate-700">
+                        Always check package labels if you have severe allergies.
+                    </p>
+                </div>
+            </div>
+
+            <div class="flex flex-col sm:flex-row items-center justify-between gap-4 text-xs text-slate-500 font-medium">
+                <p>© 2026 <strong>BiteCheck AI</strong>. Empowering Healthier Dietary Choices Every Day.</p>
+                <div class="flex items-center gap-4">
+                    <span class="hover:text-slate-800">Privacy Policy</span>
+                    <span>•</span>
+                    <span class="hover:text-slate-800">Terms of Service</span>
+                    <span>•</span>
+                    <span class="hover:text-slate-800">PWA Enabled</span>
+                </div>
+            </div>
+        </footer>
+    </div>
+
+    <!-- PWA Registration -->
+    <script src="{% static 'js/pwa_register.js' %}"></script>
+</body>
+</html>
