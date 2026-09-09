@@ -629,7 +629,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
                 } else {
                     if (analysisErrorBox) {
-                        analysisErrorBox.textContent = data.message || 'Unable to analyze this product right now. Please try again.';
+                        analysisErrorBox.textContent = data.error || data.message || 'AI analysis is temporarily unavailable. Please try again.';
                         analysisErrorBox.style.display = 'block';
                     }
                 }

@@ -1,46 +1,64 @@
 import os
 import json
 import re
+import time
 from google import genai
 from google.genai import types
 
 
-def ask_gemini(prompt):
+def ask_gemini(prompt, max_retries=2):
     """
-    Helper function to query Google Gemini API safely using gemini-3.6-flash.
+    Helper function to query Google Gemini API safely with retries and timeout protection.
     """
     api_key = os.getenv("GEMINI_API_KEY", "").strip()
 
     if not api_key or api_key == "PASTE_MY_GEMINI_API_KEY_HERE":
-        print("[Gemini Service Error] GEMINI_API_KEY is missing or set to placeholder in .env")
+        print("[Gemini Service Error] GEMINI_API_KEY is missing or set to placeholder in environment.")
         return None
+
+    models_to_try = ["gemini-2.5-flash", "gemini-1.5-flash"]
 
     try:
         client = genai.Client(api_key=api_key)
-
-        response = client.models.generate_content(
-            model="gemini-3.6-flash",
-            contents=prompt,
-        )
-
-        if response and response.text:
-            return response.text.strip()
+    except Exception as init_err:
+        print(f"[Gemini Service Init Error] ({type(init_err).__name__}): {init_err}")
         return None
 
-    except Exception as e:
-        print(f"[Gemini Service Exception] {type(e).__name__}: {e}")
-        return None
+    for attempt in range(1, max_retries + 1):
+        model_name = models_to_try[(attempt - 1) % len(models_to_try)]
+        try:
+            response = client.models.generate_content(
+                model=model_name,
+                contents=prompt,
+            )
+
+            if response and response.text:
+                return response.text.strip()
+            
+            print(f"[Gemini Service Warning Attempt {attempt}/{max_retries}] Empty response from model '{model_name}'.")
+            if attempt < max_retries:
+                time.sleep(1.0)
+
+        except Exception as e:
+            err_type = type(e).__name__
+            err_msg = str(e)[:150]
+            print(f"[Gemini Service Exception Attempt {attempt}/{max_retries}] ({err_type}): {err_msg}")
+            if attempt < max_retries:
+                time.sleep(1.0)
+
+    return None
 
 
-def analyze_food_product(product, user_profile=None):
+def analyze_food_product(product, user_profile=None, max_retries=3):
     """
-    Analyzes a Product object using Gemini AI (gemini-3.6-flash), personalized with user physical metrics,
+    Analyzes a Product object using Gemini AI, personalized with user physical metrics,
     health conditions, and food allergies. Returns structured health analysis JSON.
+    Includes automated retries, timeout/error handling, and JSON validation.
     """
     api_key = os.getenv("GEMINI_API_KEY", "").strip()
 
     if not api_key or api_key == "PASTE_MY_GEMINI_API_KEY_HERE":
-        print("[Gemini Service Error] GEMINI_API_KEY is missing or set to default placeholder in .env")
+        print("[Gemini Service Error] GEMINI_API_KEY is missing or set to default placeholder in environment.")
         return None
 
     def fmt(val, unit=""):
@@ -125,73 +143,90 @@ EXACT JSON STRUCTURE:
 }}
 """
 
+    models_to_try = ["gemini-2.5-flash", "gemini-1.5-flash"]
+
     try:
         client = genai.Client(api_key=api_key)
-
-        print("Calling Gemini API (gemini-3.6-flash)...")
-        try:
-            response = client.models.generate_content(
-                model="gemini-3.6-flash",
-                contents=prompt,
-                config=types.GenerateContentConfig(
-                    response_mime_type="application/json"
-                )
-            )
-        except Exception as primary_err:
-            print(f"[Gemini Service Warning] gemini-3.6-flash call failed ({primary_err}). Trying fallback model gemini-1.5-flash...")
-            response = client.models.generate_content(
-                model="gemini-1.5-flash",
-                contents=prompt,
-                config=types.GenerateContentConfig(
-                    response_mime_type="application/json"
-                )
-            )
-
-        if not response or not response.text:
-            print("[Gemini Service Error] Received empty response text from Gemini API.")
-            return None
-
-        print("Gemini response received successfully!")
-        raw_text = response.text.strip()
-
-        # Clean markdown code fences if present (e.g., ```json ... ```)
-        if raw_text.startswith("```"):
-            raw_text = re.sub(r"^```(?:json)?\s*", "", raw_text, flags=re.IGNORECASE)
-            raw_text = re.sub(r"\s*```$", "", raw_text)
-
-        try:
-            analysis_data = json.loads(raw_text)
-        except json.JSONDecodeError as json_err:
-            print(f"[Gemini Service Error] Failed to parse JSON response: {json_err}")
-            return None
-
-        # Enforce valid overall_rating constraint
-        valid_ratings = {"Good Choice", "Moderate", "Limit Intake"}
-        if analysis_data.get("overall_rating") not in valid_ratings:
-            analysis_data["overall_rating"] = "Moderate"
-
-        # Ensure mandatory keys exist
-        if "allergy_alert" not in analysis_data:
-            analysis_data["allergy_alert"] = False
-        if "allergy_warning" not in analysis_data:
-            analysis_data["allergy_warning"] = ""
-        if "condition_specific_notes" not in analysis_data or not isinstance(analysis_data["condition_specific_notes"], list):
-            analysis_data["condition_specific_notes"] = []
-
-        if "personalized_note" not in analysis_data or not analysis_data["personalized_note"]:
-            if not user_profile:
-                analysis_data["personalized_note"] = "Log in and complete your profile for more personalized guidance."
-            else:
-                analysis_data["personalized_note"] = "Personalized evaluation completed based on your profile."
-
-        return analysis_data
-
-    except Exception as e:
-        print(f"[Gemini Service Exception] {type(e).__name__}: {e}")
+    except Exception as init_err:
+        print(f"[Gemini Client Init Error] ({type(init_err).__name__}): {init_err}")
         return None
 
+    for attempt in range(1, max_retries + 1):
+        model_name = models_to_try[(attempt - 1) % len(models_to_try)]
+        print(f"[Gemini Analysis Attempt {attempt}/{max_retries}] Requesting AI analysis with model '{model_name}'...")
 
-def compare_products_gemini(product_a, product_b, user_profile=None):
+        try:
+            config = types.GenerateContentConfig(
+                response_mime_type="application/json"
+            )
+            response = client.models.generate_content(
+                model=model_name,
+                contents=prompt,
+                config=config,
+            )
+
+            if not response or not response.text:
+                print(f"[Gemini Warning Attempt {attempt}/{max_retries}] Empty response received from model '{model_name}'.")
+                if attempt < max_retries:
+                    time.sleep(1.0)
+                continue
+
+            raw_text = response.text.strip()
+
+            # Clean markdown code fences if present (e.g., ```json ... ```)
+            if raw_text.startswith("```"):
+                raw_text = re.sub(r"^```(?:json)?\s*", "", raw_text, flags=re.IGNORECASE)
+                raw_text = re.sub(r"\s*```$", "", raw_text)
+
+            try:
+                analysis_data = json.loads(raw_text)
+            except json.JSONDecodeError as json_err:
+                print(f"[Gemini Warning Attempt {attempt}/{max_retries}] Invalid JSON response ({type(json_err).__name__}): {json_err}")
+                if attempt < max_retries:
+                    time.sleep(1.0)
+                continue
+
+            # Validate that returned data is a dict
+            if not isinstance(analysis_data, dict):
+                print(f"[Gemini Warning Attempt {attempt}/{max_retries}] Response is not a JSON object.")
+                if attempt < max_retries:
+                    time.sleep(1.0)
+                continue
+
+            # Enforce valid overall_rating constraint
+            valid_ratings = {"Good Choice", "Moderate", "Limit Intake"}
+            if analysis_data.get("overall_rating") not in valid_ratings:
+                analysis_data["overall_rating"] = "Moderate"
+
+            # Ensure mandatory keys exist
+            if "allergy_alert" not in analysis_data:
+                analysis_data["allergy_alert"] = False
+            if "allergy_warning" not in analysis_data:
+                analysis_data["allergy_warning"] = ""
+            if "condition_specific_notes" not in analysis_data or not isinstance(analysis_data["condition_specific_notes"], list):
+                analysis_data["condition_specific_notes"] = []
+
+            if "personalized_note" not in analysis_data or not analysis_data["personalized_note"]:
+                if not user_profile:
+                    analysis_data["personalized_note"] = "Log in and complete your profile for more personalized guidance."
+                else:
+                    analysis_data["personalized_note"] = "Personalized evaluation completed based on your profile."
+
+            print(f"[Gemini Success] Health analysis generated successfully on attempt {attempt}.")
+            return analysis_data
+
+        except Exception as e:
+            err_type = type(e).__name__
+            err_msg = str(e)[:150]
+            print(f"[Gemini Analysis Error Attempt {attempt}/{max_retries}] ({err_type}): {err_msg}")
+            if attempt < max_retries:
+                time.sleep(1.0)
+
+    print(f"[Gemini Service Error] All {max_retries} attempts failed to produce valid AI analysis.")
+    return None
+
+
+def compare_products_gemini(product_a, product_b, user_profile=None, max_retries=3):
     """
     Compares two food products using Gemini AI and returns balanced educational trade-off analysis.
     Does NOT declare one product universally healthier, avoids medical diagnosis, and respects safety disclaimers.
@@ -199,7 +234,7 @@ def compare_products_gemini(product_a, product_b, user_profile=None):
     api_key = os.getenv("GEMINI_API_KEY", "").strip()
 
     if not api_key or api_key == "PASTE_MY_GEMINI_API_KEY_HERE":
-        print("[Gemini Service Error] GEMINI_API_KEY is missing or set to placeholder in .env")
+        print("[Gemini Service Error] GEMINI_API_KEY is missing or set to placeholder in environment.")
         return None
 
     def fmt(val, unit=""):
@@ -274,43 +309,57 @@ CRITICAL INSTRUCTIONS:
 }}
 """
 
+    models_to_try = ["gemini-2.5-flash", "gemini-1.5-flash"]
+
     try:
         client = genai.Client(api_key=api_key)
-
-        try:
-            response = client.models.generate_content(
-                model="gemini-3.6-flash",
-                contents=prompt,
-                config=types.GenerateContentConfig(
-                    response_mime_type="application/json"
-                )
-            )
-        except Exception:
-            response = client.models.generate_content(
-                model="gemini-1.5-flash",
-                contents=prompt,
-                config=types.GenerateContentConfig(
-                    response_mime_type="application/json"
-                )
-            )
-
-        if not response or not response.text:
-            return None
-
-        raw_text = response.text.strip()
-        if raw_text.startswith("```"):
-            raw_text = re.sub(r"^```(?:json)?\s*", "", raw_text, flags=re.IGNORECASE)
-            raw_text = re.sub(r"\s*```$", "", raw_text)
-
-        comparison_data = json.loads(raw_text)
-        return comparison_data
-
-    except Exception as e:
-        print(f"[Gemini Comparison Exception] {type(e).__name__}: {e}")
+    except Exception as init_err:
+        print(f"[Gemini Client Init Error] ({type(init_err).__name__}): {init_err}")
         return None
 
+    for attempt in range(1, max_retries + 1):
+        model_name = models_to_try[(attempt - 1) % len(models_to_try)]
+        try:
+            config = types.GenerateContentConfig(
+                response_mime_type="application/json"
+            )
+            response = client.models.generate_content(
+                model=model_name,
+                contents=prompt,
+                config=config,
+            )
 
-def generate_insights_gemini(stats_payload):
+            if not response or not response.text:
+                print(f"[Gemini Comparison Warning Attempt {attempt}/{max_retries}] Empty response from model '{model_name}'.")
+                if attempt < max_retries:
+                    time.sleep(1.0)
+                continue
+
+            raw_text = response.text.strip()
+            if raw_text.startswith("```"):
+                raw_text = re.sub(r"^```(?:json)?\s*", "", raw_text, flags=re.IGNORECASE)
+                raw_text = re.sub(r"\s*```$", "", raw_text)
+
+            try:
+                comparison_data = json.loads(raw_text)
+                if isinstance(comparison_data, dict):
+                    return comparison_data
+            except json.JSONDecodeError as json_err:
+                print(f"[Gemini Comparison Warning Attempt {attempt}/{max_retries}] Invalid JSON: {json_err}")
+                if attempt < max_retries:
+                    time.sleep(1.0)
+
+        except Exception as e:
+            err_type = type(e).__name__
+            err_msg = str(e)[:150]
+            print(f"[Gemini Comparison Error Attempt {attempt}/{max_retries}] ({err_type}): {err_msg}")
+            if attempt < max_retries:
+                time.sleep(1.0)
+
+    return None
+
+
+def generate_insights_gemini(stats_payload, max_retries=3):
     """
     Generates an educational AI nutrition summary based strictly on aggregated, anonymous scan statistics.
     Returns structured JSON with keys:
@@ -324,7 +373,7 @@ def generate_insights_gemini(stats_payload):
     api_key = os.getenv("GEMINI_API_KEY", "").strip()
 
     if not api_key or api_key == "PASTE_MY_GEMINI_API_KEY_HERE":
-        print("[Gemini Service Error] GEMINI_API_KEY is missing or placeholder in .env")
+        print("[Gemini Service Error] GEMINI_API_KEY is missing or placeholder in environment.")
         return None
 
     date_range_label = stats_payload.get("date_range_label", "Last 30 Days")
@@ -374,39 +423,54 @@ CRITICAL MANDATORY INSTRUCTIONS:
 }}
 """
 
+    models_to_try = ["gemini-2.5-flash", "gemini-1.5-flash"]
+
     try:
         client = genai.Client(api_key=api_key)
-
-        try:
-            response = client.models.generate_content(
-                model="gemini-3.6-flash",
-                contents=prompt,
-                config=types.GenerateContentConfig(
-                    response_mime_type="application/json"
-                )
-            )
-        except Exception:
-            response = client.models.generate_content(
-                model="gemini-1.5-flash",
-                contents=prompt,
-                config=types.GenerateContentConfig(
-                    response_mime_type="application/json"
-                )
-            )
-
-        if not response or not response.text:
-            return None
-
-        raw_text = response.text.strip()
-        if raw_text.startswith("```"):
-            raw_text = re.sub(r"^```(?:json)?\s*", "", raw_text, flags=re.IGNORECASE)
-            raw_text = re.sub(r"\s*```$", "", raw_text)
-
-        insights_data = json.loads(raw_text)
-        return insights_data
-
-    except Exception as e:
-        print(f"[Gemini Insights Exception] {type(e).__name__}: {e}")
+    except Exception as init_err:
+        print(f"[Gemini Client Init Error] ({type(init_err).__name__}): {init_err}")
         return None
+
+    for attempt in range(1, max_retries + 1):
+        model_name = models_to_try[(attempt - 1) % len(models_to_try)]
+        try:
+            config = types.GenerateContentConfig(
+                response_mime_type="application/json"
+            )
+            response = client.models.generate_content(
+                model=model_name,
+                contents=prompt,
+                config=config,
+            )
+
+            if not response or not response.text:
+                print(f"[Gemini Insights Warning Attempt {attempt}/{max_retries}] Empty response from model '{model_name}'.")
+                if attempt < max_retries:
+                    time.sleep(1.0)
+                continue
+
+            raw_text = response.text.strip()
+            if raw_text.startswith("```"):
+                raw_text = re.sub(r"^```(?:json)?\s*", "", raw_text, flags=re.IGNORECASE)
+                raw_text = re.sub(r"\s*```$", "", raw_text)
+
+            try:
+                insights_data = json.loads(raw_text)
+                if isinstance(insights_data, dict):
+                    return insights_data
+            except json.JSONDecodeError as json_err:
+                print(f"[Gemini Insights Warning Attempt {attempt}/{max_retries}] Invalid JSON: {json_err}")
+                if attempt < max_retries:
+                    time.sleep(1.0)
+
+        except Exception as e:
+            err_type = type(e).__name__
+            err_msg = str(e)[:150]
+            print(f"[Gemini Insights Error Attempt {attempt}/{max_retries}] ({err_type}): {err_msg}")
+            if attempt < max_retries:
+                time.sleep(1.0)
+
+    return None
+
 
 

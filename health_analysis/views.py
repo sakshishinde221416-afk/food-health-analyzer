@@ -71,17 +71,19 @@ def product_health_analysis_view(request, barcode):
     analysis_data = analyze_food_product(product, user_profile=user_profile)
 
     if not analysis_data:
-        print("[View Error] Gemini analysis failed or returned None.")
+        print("[View Warning] Gemini analysis unavailable for barcode:", barcode)
         api_key = os.getenv("GEMINI_API_KEY", "").strip()
         if not api_key or api_key == "PASTE_MY_GEMINI_API_KEY_HERE":
             return JsonResponse({
                 "success": False,
-                "message": "Gemini API key is not configured in .env file. Please set GEMINI_API_KEY in .env."
-            }, status=500)
+                "error": "Gemini API key is not configured in server environment.",
+                "message": "Gemini API key is not configured in server environment."
+            }, status=503)
         return JsonResponse({
             "success": False,
-            "message": "Unable to perform health analysis"
-        }, status=500)
+            "error": "AI analysis is temporarily unavailable. Please try again.",
+            "message": "AI analysis is temporarily unavailable. Please try again."
+        }, status=503)
 
     # 4. Fallback for personalized_note if unauthenticated
     if not request.user.is_authenticated and not analysis_data.get("personalized_note"):
@@ -170,8 +172,9 @@ def product_comparison_analysis_view(request, barcode_a, barcode_b):
     if not comparison_data:
         return JsonResponse({
             "success": False,
-            "message": "Unable to perform AI product comparison at this time."
-        }, status=500)
+            "error": "AI product comparison is temporarily unavailable. Please try again.",
+            "message": "AI product comparison is temporarily unavailable. Please try again."
+        }, status=503)
 
     return JsonResponse({
         "success": True,
@@ -268,8 +271,9 @@ def generate_ai_insights_view(request):
     if not insights_data:
         return JsonResponse({
             "success": False,
-            "message": "Unable to generate AI insights at this time. Please try again later."
-        }, status=500)
+            "error": "AI insights are temporarily unavailable. Please try again later.",
+            "message": "AI insights are temporarily unavailable. Please try again later."
+        }, status=503)
 
     return JsonResponse({
         "success": True,
