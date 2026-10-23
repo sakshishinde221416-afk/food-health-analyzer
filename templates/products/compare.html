@@ -9,13 +9,16 @@
     <!-- Google Fonts -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
 
     <!-- Tailwind CSS CDN -->
     <script src="https://cdn.tailwindcss.com"></script>
 
     <!-- Chart.js CDN -->
     <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+
+    <!-- External CSS -->
+    <link rel="stylesheet" href="{% static 'css/style.css' %}?v=5.0">
 
     <!-- Favicon & PWA Icons -->
     <link rel="shortcut icon" type="image/png" href="{% static 'images/favicon.png' %}">
@@ -27,252 +30,268 @@
     <meta name="apple-mobile-web-app-title" content="CheckBite AI">
     <link rel="manifest" href="{% static 'manifest.json' %}">
     <link rel="apple-touch-icon" href="{% static 'icons/icon-192.png' %}">
-
-    <!-- External CSS -->
-    <link rel="stylesheet" href="{% static 'css/style.css' %}?v=3.0">
 </head>
 <body class="bg-gradient-to-b from-sky-50/70 via-slate-50 to-slate-100 min-h-screen text-slate-900 font-sans antialiased">
 
     <div class="max-w-5xl mx-auto px-4 py-6">
         <!-- Navigation Header -->
         <nav class="bg-white/90 backdrop-blur-md border border-slate-200/80 rounded-2xl px-6 py-3.5 mb-8 shadow-sm flex items-center justify-between flex-wrap gap-4">
-            <a href="{% url 'dashboard' %}" class="flex items-center gap-2.5 group text-decoration-none">
+            <a href="{% if user.is_authenticated %}{% url 'dashboard' %}{% else %}{% url 'home' %}{% endif %}" class="flex items-center gap-2.5 group text-decoration-none">
                 <img src="{% static 'images/favicon.png' %}" alt="CheckBite AI Logo" class="w-8 h-8 md:w-9 md:h-9 rounded-xl object-contain shadow-md shadow-sky-500/20 group-hover:scale-105 transition-transform">
                 <span class="text-lg md:text-xl font-black text-slate-900 tracking-tight">CheckBite <span class="text-sky-600">AI</span></span>
             </a>
-            <div class="nav-links">
-                <a href="{% url 'dashboard' %}" class="nav-link">Dashboard</a>
-                <a href="{% url 'barcode_search' %}" class="nav-link">Scan Product</a>
-                <a href="{% url 'compare_products' %}" class="nav-link active">Compare</a>
-                <a href="{% url 'saved_products' %}" class="nav-link">Saved</a>
-                <a href="{% url 'food_insights' %}" class="nav-link">Insights</a>
-                <a href="{% url 'scan_history' %}" class="nav-link">History</a>
-                <a href="{% url 'profile' %}" class="nav-link">Profile</a>
-                <a href="{% url 'logout' %}" class="nav-link btn-logout">Logout ({{ user.username }})</a>
+
+            <div class="flex items-center gap-1.5 flex-wrap">
+                {% if user.is_authenticated %}
+                    <a href="{% url 'dashboard' %}" class="px-3.5 py-2 rounded-xl text-sm font-semibold text-slate-600 hover:text-slate-900 hover:bg-slate-100 transition-colors">Dashboard</a>
+                    <a href="{% url 'barcode_search' %}" class="px-3.5 py-2 rounded-xl text-sm font-semibold text-slate-600 hover:text-slate-900 hover:bg-slate-100 transition-colors">Scan Product</a>
+                    <a href="{% url 'compare_products' %}" class="px-3.5 py-2 rounded-xl text-sm font-bold text-sky-600 bg-sky-50 border border-sky-200">Compare</a>
+                    <a href="{% url 'saved_products' %}" class="px-3.5 py-2 rounded-xl text-sm font-semibold text-slate-600 hover:text-slate-900 hover:bg-slate-100 transition-colors">Saved</a>
+                    <a href="{% url 'food_insights' %}" class="px-3.5 py-2 rounded-xl text-sm font-semibold text-slate-600 hover:text-slate-900 hover:bg-slate-100 transition-colors">Insights</a>
+                    <a href="{% url 'scan_history' %}" class="px-3.5 py-2 rounded-xl text-sm font-semibold text-slate-600 hover:text-slate-900 hover:bg-slate-100 transition-colors">History</a>
+                    <a href="{% url 'profile' %}" class="px-3.5 py-2 rounded-xl text-sm font-semibold text-slate-600 hover:text-slate-900 hover:bg-slate-100 transition-colors">Profile</a>
+                    <a href="{% url 'logout' %}" class="px-3.5 py-2 rounded-xl text-xs font-bold text-rose-600 bg-rose-50 border border-rose-200 hover:bg-rose-100 transition-colors">Logout ({{ user.username }})</a>
+                {% else %}
+                    <a href="{% url 'home' %}" class="px-3.5 py-2 rounded-xl text-sm font-semibold text-slate-600 hover:text-slate-900 hover:bg-slate-100 transition-colors">Home</a>
+                    <a href="{% url 'login' %}" class="px-3.5 py-2 rounded-xl text-sm font-semibold text-slate-600 hover:text-slate-900 hover:bg-slate-100 transition-colors">Login</a>
+                    <a href="{% url 'signup' %}" class="px-4 py-2 rounded-xl text-sm font-bold text-white bg-sky-600 hover:bg-sky-700 shadow-md shadow-sky-600/20 transition-all">Sign Up</a>
+                {% endif %}
             </div>
         </nav>
 
         <!-- Page Header -->
-        <header class="app-header">
-            <h1 class="app-title">Compare Products</h1>
-            <p class="app-subtitle">Compare two packaged food products side-by-side to understand nutrition and ingredients trade-offs.</p>
+        <header class="text-center mb-8">
+            <div class="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-purple-100 text-purple-700 text-xs font-bold mb-3">
+                ⚖️ Side-by-Side Nutritional Comparison
+            </div>
+            <h1 class="text-3xl md:text-4xl font-extrabold text-slate-900 tracking-tight mb-2">Compare 2 Products</h1>
+            <p class="text-slate-500 text-sm md:text-base max-w-xl mx-auto">Compare two packaged foods side-by-side to understand nutritional trade-offs and receive AI recommendations.</p>
         </header>
 
         {% if messages %}
-            <div class="messages">
+            <div class="mb-6 space-y-2">
                 {% for message in messages %}
-                    <div class="alert alert-{{ message.tags }}">{{ message }}</div>
+                    <div class="px-4 py-3 rounded-xl text-sm font-semibold border {% if message.tags == 'error' %}bg-rose-50 border-rose-200 text-rose-700{% else %}bg-emerald-50 border-emerald-200 text-emerald-700{% endif %}">
+                        {{ message }}
+                    </div>
                 {% endfor %}
             </div>
         {% endif %}
 
         <!-- Compare Barcode Input Form Card -->
-        <div class="card compare-form-card">
+        <div class="card compare-form-card bg-white rounded-3xl border border-slate-200/90 p-6 md:p-8 shadow-sm mb-8">
             <form method="GET" action="{% url 'compare_products' %}" class="compare-form" autocomplete="off">
-                <div class="compare-inputs-grid">
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     <div class="form-group">
-                        <label for="barcode_a" class="form-label">Product A Barcode</label>
+                        <label for="barcode_a" class="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-2">Product A Barcode</label>
                         <input 
                             type="text" 
                             id="barcode_a" 
                             name="barcode_a" 
-                            class="input-field" 
+                            class="input-field w-full px-4 py-3 rounded-xl border border-slate-200 bg-slate-50/50 focus:bg-white focus:border-sky-500 focus:ring-2 focus:ring-sky-500/20 outline-none text-slate-800 text-sm transition-all" 
                             value="{{ barcode_a|default:'' }}" 
                             placeholder="e.g. 3017620422003" 
                             required
                         />
                     </div>
                     <div class="form-group">
-                        <label for="barcode_b" class="form-label">Product B Barcode</label>
+                        <label for="barcode_b" class="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-2">Product B Barcode</label>
                         <input 
                             type="text" 
                             id="barcode_b" 
                             name="barcode_b" 
-                            class="input-field" 
+                            class="input-field w-full px-4 py-3 rounded-xl border border-slate-200 bg-slate-50/50 focus:bg-white focus:border-purple-500 focus:ring-2 focus:ring-purple-500/20 outline-none text-slate-800 text-sm transition-all" 
                             value="{{ barcode_b|default:'' }}" 
                             placeholder="e.g. 7622210449283" 
                             required
                         />
                     </div>
                 </div>
-                <button type="submit" class="btn-primary full-width margin-top-md">
+                <button type="submit" class="btn-primary full-width w-full mt-4 py-3.5 rounded-xl font-bold bg-sky-600 text-white hover:bg-sky-700 shadow-md shadow-sky-600/20 active:scale-[0.98] transition-all cursor-pointer text-sm">
                     ⚖️ Compare Products
                 </button>
             </form>
         </div>
 
         {% if error_msg %}
-            <div class="error-box margin-top-md" style="display: block;">
+            <div class="error-box p-4 rounded-xl bg-rose-50 border border-rose-200 text-rose-700 text-sm font-semibold mb-6" style="display: block;">
                 {{ error_msg }}
             </div>
         {% endif %}
 
         {% if product_a and product_b %}
             <!-- Side-by-Side Product Overview Cards -->
-            <div class="compare-products-grid margin-top-md">
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-8">
                 <!-- Product A Card -->
-                <div class="card compare-prod-card compare-prod-a">
-                    <div class="prod-badge badge-a">Product A</div>
-                    <h3 class="product-title margin-top-xs">{{ product_a.product_name }}</h3>
-                    <div class="product-brand">Brand: {{ product_a.brand|default:"Not available" }}</div>
-                    <div class="meta-item margin-top-xs">Barcode: <span>{{ product_a.barcode }}</span></div>
+                <div class="card compare-prod-card compare-prod-a bg-white rounded-3xl border-2 border-sky-200 p-6 shadow-sm">
+                    <span class="inline-block px-3 py-1 rounded-full text-xs font-black bg-sky-100 text-sky-700 uppercase tracking-wider mb-2">Product A</span>
+                    <h3 class="product-title text-xl font-extrabold text-slate-900 mt-1">{{ product_a.product_name }}</h3>
+                    <div class="product-brand text-slate-500 text-sm font-medium mt-1">Brand: {{ product_a.brand|default:"Not available" }}</div>
+                    <div class="meta-item text-xs text-slate-400 font-mono mt-2">Barcode: <span class="font-bold text-slate-700">{{ product_a.barcode }}</span></div>
                 </div>
 
                 <!-- Product B Card -->
-                <div class="card compare-prod-card compare-prod-b">
-                    <div class="prod-badge badge-b">Product B</div>
-                    <h3 class="product-title margin-top-xs">{{ product_b.product_name }}</h3>
-                    <div class="product-brand">Brand: {{ product_b.brand|default:"Not available" }}</div>
-                    <div class="meta-item margin-top-xs">Barcode: <span>{{ product_b.barcode }}</span></div>
+                <div class="card compare-prod-card compare-prod-b bg-white rounded-3xl border-2 border-purple-200 p-6 shadow-sm">
+                    <span class="inline-block px-3 py-1 rounded-full text-xs font-black bg-purple-100 text-purple-700 uppercase tracking-wider mb-2">Product B</span>
+                    <h3 class="product-title text-xl font-extrabold text-slate-900 mt-1">{{ product_b.product_name }}</h3>
+                    <div class="product-brand text-slate-500 text-sm font-medium mt-1">Brand: {{ product_b.brand|default:"Not available" }}</div>
+                    <div class="meta-item text-xs text-slate-400 font-mono mt-2">Barcode: <span class="font-bold text-slate-700">{{ product_b.barcode }}</span></div>
                 </div>
             </div>
 
             <!-- Comparison Table -->
-            <div class="card section-card margin-top-md">
-                <div class="dashboard-section-header">
-                    <h2 class="section-heading">Nutrition Comparison (per 100g)</h2>
+            <div class="card section-card bg-white rounded-3xl border border-slate-200/90 p-6 md:p-8 shadow-sm mb-8">
+                <div class="border-b border-slate-100 pb-4 mb-4">
+                    <h2 class="text-lg md:text-xl font-black text-slate-900">Nutrition Comparison (per 100g)</h2>
                 </div>
 
-                <div class="table-responsive margin-top-sm">
-                    <table class="compare-table">
+                <div class="overflow-x-auto">
+                    <table class="compare-table w-full text-left text-sm border-collapse">
                         <thead>
-                            <tr>
-                                <th>Nutrient</th>
-                                <th>{{ product_a.product_name }} (A)</th>
-                                <th>{{ product_b.product_name }} (B)</th>
+                            <tr class="border-b border-slate-200 text-xs font-extrabold text-slate-400 uppercase tracking-wider">
+                                <th class="py-3 px-4">Nutrient</th>
+                                <th class="py-3 px-4 text-sky-700">{{ product_a.product_name }} (A)</th>
+                                <th class="py-3 px-4 text-purple-700">{{ product_b.product_name }} (B)</th>
                             </tr>
                         </thead>
-                        <tbody>
-                            <tr>
-                                <td><strong>Calories</strong></td>
-                                <td>{% if product_a.calories is not None %}{{ product_a.calories }} kcal{% else %}N/A{% endif %}</td>
-                                <td>{% if product_b.calories is not None %}{{ product_b.calories }} kcal{% else %}N/A{% endif %}</td>
+                        <tbody class="divide-y divide-slate-100 text-slate-700 font-medium">
+                            <tr class="hover:bg-slate-50 transition-colors">
+                                <td class="py-3 px-4 font-bold text-slate-900">Calories</td>
+                                <td class="py-3 px-4">{% if product_a.calories is not None %}{{ product_a.calories }} kcal{% else %}N/A{% endif %}</td>
+                                <td class="py-3 px-4">{% if product_b.calories is not None %}{{ product_b.calories }} kcal{% else %}N/A{% endif %}</td>
                             </tr>
-                            <tr>
-                                <td><strong>Protein</strong></td>
-                                <td>{% if product_a.protein is not None %}{{ product_a.protein }} g{% else %}N/A{% endif %}</td>
-                                <td>{% if product_b.protein is not None %}{{ product_b.protein }} g{% else %}N/A{% endif %}</td>
+                            <tr class="hover:bg-slate-50 transition-colors">
+                                <td class="py-3 px-4 font-bold text-slate-900">Protein</td>
+                                <td class="py-3 px-4">{% if product_a.protein is not None %}{{ product_a.protein }} g{% else %}N/A{% endif %}</td>
+                                <td class="py-3 px-4">{% if product_b.protein is not None %}{{ product_b.protein }} g{% else %}N/A{% endif %}</td>
                             </tr>
-                            <tr>
-                                <td><strong>Carbohydrates</strong></td>
-                                <td>{% if product_a.carbohydrates is not None %}{{ product_a.carbohydrates }} g{% else %}N/A{% endif %}</td>
-                                <td>{% if product_b.carbohydrates is not None %}{{ product_b.carbohydrates }} g{% else %}N/A{% endif %}</td>
+                            <tr class="hover:bg-slate-50 transition-colors">
+                                <td class="py-3 px-4 font-bold text-slate-900">Carbohydrates</td>
+                                <td class="py-3 px-4">{% if product_a.carbohydrates is not None %}{{ product_a.carbohydrates }} g{% else %}N/A{% endif %}</td>
+                                <td class="py-3 px-4">{% if product_b.carbohydrates is not None %}{{ product_b.carbohydrates }} g{% else %}N/A{% endif %}</td>
                             </tr>
-                            <tr>
-                                <td><strong>Total Fat</strong></td>
-                                <td>{% if product_a.fat is not None %}{{ product_a.fat }} g{% else %}N/A{% endif %}</td>
-                                <td>{% if product_b.fat is not None %}{{ product_b.fat }} g{% else %}N/A{% endif %}</td>
+                            <tr class="hover:bg-slate-50 transition-colors">
+                                <td class="py-3 px-4 font-bold text-slate-900">Total Fat</td>
+                                <td class="py-3 px-4">{% if product_a.fat is not None %}{{ product_a.fat }} g{% else %}N/A{% endif %}</td>
+                                <td class="py-3 px-4">{% if product_b.fat is not None %}{{ product_b.fat }} g{% else %}N/A{% endif %}</td>
                             </tr>
-                            <tr>
-                                <td><strong>Saturated Fat</strong></td>
-                                <td>{% if product_a.saturated_fat is not None %}{{ product_a.saturated_fat }} g{% else %}N/A{% endif %}</td>
-                                <td>{% if product_b.saturated_fat is not None %}{{ product_b.saturated_fat }} g{% else %}N/A{% endif %}</td>
+                            <tr class="hover:bg-slate-50 transition-colors">
+                                <td class="py-3 px-4 font-bold text-slate-900">Saturated Fat</td>
+                                <td class="py-3 px-4">{% if product_a.saturated_fat is not None %}{{ product_a.saturated_fat }} g{% else %}N/A{% endif %}</td>
+                                <td class="py-3 px-4">{% if product_b.saturated_fat is not None %}{{ product_b.saturated_fat }} g{% else %}N/A{% endif %}</td>
                             </tr>
-                            <tr>
-                                <td><strong>Sugar</strong></td>
-                                <td>{% if product_a.sugar is not None %}{{ product_a.sugar }} g{% else %}N/A{% endif %}</td>
-                                <td>{% if product_b.sugar is not None %}{{ product_b.sugar }} g{% else %}N/A{% endif %}</td>
+                            <tr class="hover:bg-slate-50 transition-colors">
+                                <td class="py-3 px-4 font-bold text-slate-900">Sugar</td>
+                                <td class="py-3 px-4">{% if product_a.sugar is not None %}{{ product_a.sugar }} g{% else %}N/A{% endif %}</td>
+                                <td class="py-3 px-4">{% if product_b.sugar is not None %}{{ product_b.sugar }} g{% else %}N/A{% endif %}</td>
                             </tr>
-                            <tr>
-                                <td><strong>Fiber</strong></td>
-                                <td>{% if product_a.fiber is not None %}{{ product_a.fiber }} g{% else %}N/A{% endif %}</td>
-                                <td>{% if product_b.fiber is not None %}{{ product_b.fiber }} g{% else %}N/A{% endif %}</td>
+                            <tr class="hover:bg-slate-50 transition-colors">
+                                <td class="py-3 px-4 font-bold text-slate-900">Fiber</td>
+                                <td class="py-3 px-4">{% if product_a.fiber is not None %}{{ product_a.fiber }} g{% else %}N/A{% endif %}</td>
+                                <td class="py-3 px-4">{% if product_b.fiber is not None %}{{ product_b.fiber }} g{% else %}N/A{% endif %}</td>
                             </tr>
-                            <tr>
-                                <td><strong>Sodium</strong></td>
-                                <td>{% if product_a.sodium is not None %}{{ product_a.sodium }} g{% else %}N/A{% endif %}</td>
-                                <td>{% if product_b.sodium is not None %}{{ product_b.sodium }} g{% else %}N/A{% endif %}</td>
+                            <tr class="hover:bg-slate-50 transition-colors">
+                                <td class="py-3 px-4 font-bold text-slate-900">Sodium</td>
+                                <td class="py-3 px-4">{% if product_a.sodium is not None %}{{ product_a.sodium }} mg{% else %}N/A{% endif %}</td>
+                                <td class="py-3 px-4">{% if product_b.sodium is not None %}{{ product_b.sodium }} mg{% else %}N/A{% endif %}</td>
                             </tr>
                         </tbody>
                     </table>
                 </div>
             </div>
 
-            <!-- Grouped Bar Chart -->
-            <div class="card section-card margin-top-md">
-                <div class="dashboard-section-header">
-                    <h2 class="section-heading">Nutrient Graph Comparison</h2>
+            <!-- Side-by-Side Ingredients Comparison -->
+            <div class="card section-card bg-white rounded-3xl border border-slate-200/90 p-6 md:p-8 shadow-sm mb-8">
+                <div class="border-b border-slate-100 pb-4 mb-4">
+                    <h2 class="text-lg md:text-xl font-black text-slate-900">Ingredients Comparison</h2>
                 </div>
-                <div class="chart-wrapper" style="height: 300px;">
-                    <canvas id="compareChartCanvas"></canvas>
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <div class="p-4 rounded-2xl bg-sky-50/50 border border-sky-100">
+                        <h4 class="text-xs font-bold text-sky-800 uppercase tracking-wider mb-2">{{ product_a.product_name }}</h4>
+                        <div class="text-xs text-slate-700 leading-relaxed max-h-48 overflow-y-auto">
+                            {{ product_a.ingredients|default:"Ingredients information not available." }}
+                        </div>
+                    </div>
+                    <div class="p-4 rounded-2xl bg-purple-50/50 border border-purple-100">
+                        <h4 class="text-xs font-bold text-purple-800 uppercase tracking-wider mb-2">{{ product_b.product_name }}</h4>
+                        <div class="text-xs text-slate-700 leading-relaxed max-h-48 overflow-y-auto">
+                            {{ product_b.ingredients|default:"Ingredients information not available." }}
+                        </div>
+                    </div>
                 </div>
-                <p class="chart-note">Values are shown in grams per 100g. Calories and Sodium are excluded from the bar graph for scale accuracy.</p>
             </div>
 
-            <!-- Quick Comparison Rule-Based Insights -->
-            {% if insights %}
-                <div class="card section-card margin-top-md">
-                    <div class="dashboard-section-header">
-                        <h2 class="section-heading">Quick Comparison</h2>
-                    </div>
-                    <ul class="analysis-list margin-top-sm">
-                        {% for item in insights %}
-                            <li>{{ item }}</li>
-                        {% endfor %}
-                    </ul>
+            <!-- Grouped Bar Chart -->
+            <div class="card section-card bg-white rounded-3xl border border-slate-200/90 p-6 md:p-8 shadow-sm mb-8">
+                <div class="border-b border-slate-100 pb-4 mb-4">
+                    <h2 class="text-lg md:text-xl font-black text-slate-900">Visual Nutritional Comparison</h2>
                 </div>
-            {% endif %}
+                <div class="chart-wrapper relative h-72 w-full">
+                    <canvas id="compareChartCanvas"></canvas>
+                </div>
+                <p class="text-xs text-slate-400 text-center mt-3">Values shown in grams per 100g product.</p>
+            </div>
 
-            <!-- AI Comparison Section -->
-            <div class="card section-card margin-top-md">
-                <div class="analysis-action-row">
-                    <button type="button" id="compare-ai-btn" class="btn-secondary">
+            <!-- AI-Powered Comparison Feature -->
+            <div class="card section-card bg-white rounded-3xl border border-slate-200/90 p-6 md:p-8 shadow-sm mb-8">
+                <div class="text-center pb-4">
+                    <button type="button" id="compare-ai-btn" class="px-8 py-3.5 rounded-xl font-bold bg-gradient-to-r from-sky-600 via-indigo-600 to-purple-600 text-white hover:from-sky-700 hover:to-purple-700 shadow-md shadow-indigo-600/20 active:scale-[0.98] transition-all cursor-pointer text-sm">
                         🤖 Compare with AI
                     </button>
-                    <div class="analysis-subtext">
+                    <div class="text-xs text-slate-500 mt-2 max-w-lg mx-auto">
                         Get AI-powered balanced trade-off analysis between these two products based on ingredients and nutritional metrics.
                     </div>
                 </div>
 
                 <!-- Loading Spinner for AI -->
-                <div id="compare-ai-loading-box" class="loading-box">
-                    <span class="spinner"></span>
+                <div id="compare-ai-loading-box" class="loading-box py-8 flex items-center justify-center gap-3 text-indigo-600 font-semibold" style="display: none;">
+                    <span class="spinner inline-block w-6 h-6 border-3 border-indigo-600/20 border-t-indigo-600 rounded-full animate-spin"></span>
                     <span>AI is comparing ingredients and nutritional trade-offs between both products...</span>
                 </div>
 
                 <!-- Error Alert for AI -->
-                <div id="compare-ai-error-box" class="error-box"></div>
+                <div id="compare-ai-error-box" class="error-box mt-4 p-4 rounded-xl bg-rose-50 border border-rose-200 text-rose-700 text-sm font-semibold" style="display: none;"></div>
 
                 <!-- AI Comparison Output Container -->
-                <div id="compare-ai-container" class="analysis-container margin-top-md" style="display: none;">
-                    <h3 class="analysis-title">AI Product Trade-off Comparison</h3>
-                    <div id="compare-ai-summary" class="analysis-summary margin-top-sm"></div>
+                <div id="compare-ai-container" class="analysis-container mt-6 pt-6 border-t border-slate-200/80" style="display: none;">
+                    <h3 class="analysis-title text-xl font-extrabold text-slate-900 mb-2">AI Product Trade-off Comparison</h3>
+                    <div id="compare-ai-summary" class="analysis-summary p-5 rounded-2xl bg-slate-50 border border-slate-200/80 text-slate-700 text-sm leading-relaxed mb-6 font-medium"></div>
 
                     <!-- Product A Strengths -->
-                    <div id="sec-ai-a-strengths" class="analysis-block positive-block margin-top-md">
-                        <h4 class="block-title" id="title-a-strengths">Product A Advantages</h4>
-                        <ul id="list-a-strengths" class="analysis-list"></ul>
+                    <div id="sec-ai-a-strengths" class="analysis-block positive-block p-5 rounded-2xl bg-sky-50/70 border border-sky-200/80 mb-4" style="display: none;">
+                        <h4 class="block-title text-sm font-bold text-sky-900 uppercase tracking-wider mb-2" id="title-a-strengths">Product A Advantages</h4>
+                        <ul id="list-a-strengths" class="analysis-list list-disc list-inside space-y-1.5 text-sm text-sky-800"></ul>
                     </div>
 
                     <!-- Product B Strengths -->
-                    <div id="sec-ai-b-strengths" class="analysis-block positive-block margin-top-md">
-                        <h4 class="block-title" id="title-b-strengths">Product B Advantages</h4>
-                        <ul id="list-b-strengths" class="analysis-list"></ul>
+                    <div id="sec-ai-b-strengths" class="analysis-block positive-block p-5 rounded-2xl bg-purple-50/70 border border-purple-200/80 mb-4" style="display: none;">
+                        <h4 class="block-title text-sm font-bold text-purple-900 uppercase tracking-wider mb-2" id="title-b-strengths">Product B Advantages</h4>
+                        <ul id="list-b-strengths" class="analysis-list list-disc list-inside space-y-1.5 text-sm text-purple-800"></ul>
                     </div>
 
                     <!-- Important Differences -->
-                    <div id="sec-ai-differences" class="analysis-block concern-block margin-top-md">
-                        <h4 class="block-title">Key Differences to Consider</h4>
-                        <ul id="list-differences" class="analysis-list"></ul>
+                    <div id="sec-ai-differences" class="analysis-block concern-block p-5 rounded-2xl bg-amber-50/70 border border-amber-200/80 mb-4" style="display: none;">
+                        <h4 class="block-title text-sm font-bold text-amber-900 uppercase tracking-wider mb-2">Key Differences to Consider</h4>
+                        <ul id="list-differences" class="analysis-list list-disc list-inside space-y-1.5 text-sm text-amber-800"></ul>
                     </div>
 
                     <!-- Who Might Prefer Product A -->
-                    <div id="sec-ai-prefer-a" class="analysis-block condition-block margin-top-md">
-                        <h4 class="block-title" id="title-prefer-a">Who Might Prefer Product A</h4>
-                        <ul id="list-prefer-a" class="analysis-list"></ul>
+                    <div id="sec-ai-prefer-a" class="analysis-block condition-block p-5 rounded-2xl bg-indigo-50/70 border border-indigo-200/80 mb-4" style="display: none;">
+                        <h4 class="block-title text-sm font-bold text-indigo-900 uppercase tracking-wider mb-2" id="title-prefer-a">Who Might Prefer Product A</h4>
+                        <ul id="list-prefer-a" class="analysis-list list-disc list-inside space-y-1.5 text-sm text-indigo-800"></ul>
                     </div>
 
                     <!-- Who Might Prefer Product B -->
-                    <div id="sec-ai-prefer-b" class="analysis-block condition-block margin-top-md">
-                        <h4 class="block-title" id="title-prefer-b">Who Might Prefer Product B</h4>
-                        <ul id="list-prefer-b" class="analysis-list"></ul>
+                    <div id="sec-ai-prefer-b" class="analysis-block condition-block p-5 rounded-2xl bg-teal-50/70 border border-teal-200/80 mb-4" style="display: none;">
+                        <h4 class="block-title text-sm font-bold text-teal-900 uppercase tracking-wider mb-2" id="title-prefer-b">Who Might Prefer Product B</h4>
+                        <ul id="list-prefer-b" class="analysis-list list-disc list-inside space-y-1.5 text-sm text-teal-800"></ul>
                     </div>
 
                     <!-- Final Note -->
-                    <div id="compare-ai-final-note" class="personalized-note-text margin-top-md"></div>
+                    <div id="compare-ai-final-note" class="personalized-note-text p-4 rounded-2xl bg-emerald-50 text-emerald-800 text-sm font-medium mb-4"></div>
 
                     <!-- Medical Disclaimer -->
-                    <div id="compare-ai-disclaimer" class="analysis-disclaimer margin-top-md"></div>
+                    <div id="compare-ai-disclaimer" class="analysis-disclaimer text-xs text-slate-400 text-center italic mt-6"></div>
                 </div>
             </div>
         {% endif %}
@@ -301,7 +320,7 @@
                     <ul class="space-y-2 text-xs text-slate-600 font-medium">
                         <li><a href="{% url 'dashboard' %}" class="hover:text-sky-600 transition-colors">Dashboard Analytics</a></li>
                         <li><a href="{% url 'barcode_search' %}" class="hover:text-sky-600 transition-colors">Scan Barcode</a></li>
-                        <li><a href="{% url 'compare_products' %}" class="hover:text-sky-600 transition-colors">Compare 2 Products</a></li>
+                        <li><a href="{% url 'compare_products' %}" class="hover:text-sky-600 transition-colors font-bold text-sky-600">Compare 2 Products</a></li>
                         <li><a href="{% url 'saved_products' %}" class="hover:text-sky-600 transition-colors">Saved Favorites</a></li>
                         <li><a href="{% url 'food_insights' %}" class="hover:text-sky-600 transition-colors">My Food Insights</a></li>
                         <li><a href="{% url 'scan_history' %}" class="hover:text-sky-600 transition-colors">Scan History</a></li>
@@ -395,7 +414,6 @@
                         const valA = prodA[def.key];
                         const valB = prodB[def.key];
 
-                        // Skip nutrient if BOTH products have no data for it
                         if (valA !== null || valB !== null) {
                             labels.push(def.label);
                             dataA.push(valA !== null ? valA : 0);
@@ -413,16 +431,16 @@
                                     {
                                         label: prodA.name,
                                         data: dataA,
-                                        backgroundColor: '#38bdf8',
-                                        borderRadius: 4,
-                                        maxBarThickness: 35
+                                        backgroundColor: '#0284c7',
+                                        borderRadius: 6,
+                                        maxBarThickness: 36
                                     },
                                     {
                                         label: prodB.name,
                                         data: dataB,
-                                        backgroundColor: '#a855f7',
-                                        borderRadius: 4,
-                                        maxBarThickness: 35
+                                        backgroundColor: '#9333ea',
+                                        borderRadius: 6,
+                                        maxBarThickness: 36
                                     }
                                 ]
                             },
@@ -433,7 +451,7 @@
                                 plugins: {
                                     legend: {
                                         position: 'top',
-                                        labels: { color: '#94a3b8', font: { family: 'Inter', size: 12, weight: '600' } }
+                                        labels: { color: '#64748b', font: { family: 'Inter', size: 12, weight: '600' } }
                                     },
                                     tooltip: {
                                         callbacks: {
@@ -445,18 +463,18 @@
                                 },
                                 scales: {
                                     x: {
-                                        ticks: { color: '#94a3b8', font: { family: 'Inter', size: 11, weight: '500' } },
+                                        ticks: { color: '#64748b', font: { family: 'Inter', size: 11, weight: '500' } },
                                         grid: { display: false }
                                     },
                                     y: {
                                         title: {
                                             display: true,
                                             text: 'Grams per 100g',
-                                            color: '#94a3b8',
+                                            color: '#64748b',
                                             font: { family: 'Inter', size: 11, weight: '600' }
                                         },
-                                        ticks: { color: '#94a3b8', font: { family: 'Inter', size: 11 } },
-                                        grid: { color: '#334155' },
+                                        ticks: { color: '#64748b', font: { family: 'Inter', size: 11 } },
+                                        grid: { color: '#e2e8f0' },
                                         beginAtZero: true
                                     }
                                 }

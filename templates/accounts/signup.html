@@ -8,12 +8,13 @@
 
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+    
     <!-- Tailwind CSS CDN -->
     <script src="https://cdn.tailwindcss.com"></script>
 
     <!-- External CSS -->
-    <link rel="stylesheet" href="{% static 'css/style.css' %}?v=3.0">
+    <link rel="stylesheet" href="{% static 'css/style.css' %}?v=5.0">
 
     <!-- Favicon & PWA Icons -->
     <link rel="shortcut icon" type="image/png" href="{% static 'images/favicon.png' %}">
@@ -35,65 +36,75 @@
                 <img src="{% static 'images/favicon.png' %}" alt="CheckBite AI Logo" class="w-8 h-8 md:w-9 md:h-9 rounded-xl object-contain shadow-md shadow-sky-500/20 group-hover:scale-105 transition-transform">
                 <span class="text-lg md:text-xl font-black text-slate-900 tracking-tight">CheckBite <span class="text-sky-600">AI</span></span>
             </a>
-            <div class="nav-links">
+
+            <div class="flex items-center gap-1.5 flex-wrap">
                 {% if user.is_authenticated %}
-                    <a href="{% url 'dashboard' %}" class="nav-link">Dashboard</a>
-                    <a href="{% url 'barcode_search' %}" class="nav-link">Scan Product</a>
-                    <a href="{% url 'compare_products' %}" class="nav-link">Compare</a>
-                    <a href="{% url 'saved_products' %}" class="nav-link">Saved</a>
-                    <a href="{% url 'food_insights' %}" class="nav-link">Insights</a>
-                    <a href="{% url 'scan_history' %}" class="nav-link">History</a>
-                    <a href="{% url 'profile' %}" class="nav-link">Profile</a>
-                    <a href="{% url 'logout' %}" class="nav-link btn-logout">Logout ({{ user.username }})</a>
+                    <a href="{% url 'dashboard' %}" class="px-3.5 py-2 rounded-xl text-sm font-semibold text-slate-600 hover:text-slate-900 hover:bg-slate-100 transition-colors">Dashboard</a>
+                    <a href="{% url 'barcode_search' %}" class="px-3.5 py-2 rounded-xl text-sm font-semibold text-slate-600 hover:text-slate-900 hover:bg-slate-100 transition-colors">Scan Product</a>
+                    <a href="{% url 'compare_products' %}" class="px-3.5 py-2 rounded-xl text-sm font-semibold text-slate-600 hover:text-slate-900 hover:bg-slate-100 transition-colors">Compare</a>
+                    <a href="{% url 'saved_products' %}" class="px-3.5 py-2 rounded-xl text-sm font-semibold text-slate-600 hover:text-slate-900 hover:bg-slate-100 transition-colors">Saved</a>
+                    <a href="{% url 'food_insights' %}" class="px-3.5 py-2 rounded-xl text-sm font-semibold text-slate-600 hover:text-slate-900 hover:bg-slate-100 transition-colors">Insights</a>
+                    <a href="{% url 'scan_history' %}" class="px-3.5 py-2 rounded-xl text-sm font-semibold text-slate-600 hover:text-slate-900 hover:bg-slate-100 transition-colors">History</a>
+                    <a href="{% url 'profile' %}" class="px-3.5 py-2 rounded-xl text-sm font-semibold text-slate-600 hover:text-slate-900 hover:bg-slate-100 transition-colors">Profile</a>
+                    <a href="{% url 'logout' %}" class="px-3.5 py-2 rounded-xl text-xs font-bold text-rose-600 bg-rose-50 border border-rose-200 hover:bg-rose-100 transition-colors">Logout ({{ user.username }})</a>
                 {% else %}
-                    <a href="{% url 'home' %}" class="nav-link">Home</a>
-                    <a href="{% url 'login' %}" class="nav-link">Login</a>
-                    <a href="{% url 'signup' %}" class="nav-link active">Sign Up</a>
+                    <a href="{% url 'home' %}" class="px-3.5 py-2 rounded-xl text-sm font-semibold text-slate-600 hover:text-slate-900 hover:bg-slate-100 transition-colors">Home</a>
+                    <a href="{% url 'login' %}" class="px-3.5 py-2 rounded-xl text-sm font-semibold text-slate-600 hover:text-slate-900 hover:bg-slate-100 transition-colors">Login</a>
+                    <a href="{% url 'signup' %}" class="px-4 py-2 rounded-xl text-sm font-bold text-white bg-sky-600 hover:bg-sky-700 shadow-md shadow-sky-600/20 transition-all">Sign Up</a>
                 {% endif %}
             </div>
         </nav>
 
         <!-- Auth Card -->
-        <div class="card auth-card">
-            <h2 class="auth-title">Create Account</h2>
-            <p class="auth-subtitle">Sign up to manage your personalized health profile.</p>
+        <div class="max-w-md mx-auto my-12 bg-white rounded-3xl border border-slate-200/90 p-8 md:p-10 shadow-sm">
+            <div class="text-center mb-8">
+                <div class="w-12 h-12 rounded-2xl bg-emerald-100 text-emerald-600 text-2xl flex items-center justify-center mx-auto mb-3">
+                    ✨
+                </div>
+                <h2 class="text-2xl font-black text-slate-900">Create Account</h2>
+                <p class="text-slate-500 text-xs md:text-sm mt-1">Sign up to manage your personalized dietary health profile.</p>
+            </div>
 
             {% if messages %}
-                <div class="messages">
+                <div class="mb-6 space-y-2">
                     {% for message in messages %}
-                        <div class="alert alert-{{ message.tags }}">{{ message }}</div>
+                        <div class="px-4 py-3 rounded-xl text-sm font-semibold border {% if message.tags == 'error' %}bg-rose-50 border-rose-200 text-rose-700{% else %}bg-emerald-50 border-emerald-200 text-emerald-700{% endif %}">
+                            {{ message }}
+                        </div>
                     {% endfor %}
                 </div>
             {% endif %}
 
-            <form method="POST" action="{% url 'signup' %}" class="form-grid">
+            <form method="POST" action="{% url 'signup' %}" class="space-y-4">
                 {% csrf_token %}
 
-                <div class="form-group">
-                    <label for="username" class="form-label">Username</label>
-                    <input type="text" id="username" name="username" class="input-field" value="{{ username|default:'' }}" required placeholder="Choose a username">
+                <div>
+                    <label for="username" class="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-2">Username</label>
+                    <input type="text" id="username" name="username" class="w-full px-4 py-3 rounded-xl border border-slate-200 bg-slate-50/50 focus:bg-white focus:border-sky-500 focus:ring-2 focus:ring-sky-500/20 outline-none text-slate-800 text-sm transition-all" value="{{ username|default:'' }}" required placeholder="Choose a username">
                 </div>
 
-                <div class="form-group">
-                    <label for="email" class="form-label">Email Address</label>
-                    <input type="email" id="email" name="email" class="input-field" value="{{ email|default:'' }}" required placeholder="you@example.com">
+                <div>
+                    <label for="email" class="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-2">Email Address</label>
+                    <input type="email" id="email" name="email" class="w-full px-4 py-3 rounded-xl border border-slate-200 bg-slate-50/50 focus:bg-white focus:border-sky-500 focus:ring-2 focus:ring-sky-500/20 outline-none text-slate-800 text-sm transition-all" value="{{ email|default:'' }}" required placeholder="you@example.com">
                 </div>
 
-                <div class="form-group">
-                    <label for="password" class="form-label">Password</label>
-                    <input type="password" id="password" name="password" class="input-field" required placeholder="Enter strong password">
+                <div>
+                    <label for="password" class="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-2">Password</label>
+                    <input type="password" id="password" name="password" class="w-full px-4 py-3 rounded-xl border border-slate-200 bg-slate-50/50 focus:bg-white focus:border-sky-500 focus:ring-2 focus:ring-sky-500/20 outline-none text-slate-800 text-sm transition-all" required placeholder="Create a strong password">
                 </div>
 
-                <div class="form-group">
-                    <label for="confirm_password" class="form-label">Confirm Password</label>
-                    <input type="password" id="confirm_password" name="confirm_password" class="input-field" required placeholder="Re-enter password">
+                <div>
+                    <label for="confirm_password" class="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-2">Confirm Password</label>
+                    <input type="password" id="confirm_password" name="confirm_password" class="w-full px-4 py-3 rounded-xl border border-slate-200 bg-slate-50/50 focus:bg-white focus:border-sky-500 focus:ring-2 focus:ring-sky-500/20 outline-none text-slate-800 text-sm transition-all" required placeholder="Re-enter password">
                 </div>
 
-                <button type="submit" class="btn-primary full-width">Sign Up</button>
+                <button type="submit" class="w-full py-3.5 rounded-xl font-bold bg-sky-600 text-white hover:bg-sky-700 shadow-md shadow-sky-600/20 active:scale-[0.98] transition-all cursor-pointer text-sm mt-2">
+                    Create Account
+                </button>
             </form>
 
-            <div class="auth-footer">
-                Already have an account? <a href="{% url 'login' %}">Log in here</a>
+            <div class="text-center text-xs text-slate-500 mt-6 pt-6 border-t border-slate-100">
+                Already have an account? <a href="{% url 'login' %}" class="font-bold text-sky-600 hover:underline">Log in here</a>
             </div>
         </div>
 

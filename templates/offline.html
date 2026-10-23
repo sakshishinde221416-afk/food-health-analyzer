@@ -4,52 +4,73 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <meta name="theme-color" content="#10b981">
     <title>You're Offline - CheckBite AI</title>
-
-    <!-- Favicon & PWA Icons -->
-    <link rel="shortcut icon" type="image/png" href="{% static 'images/favicon.png' %}">
-    <link rel="icon" type="image/x-icon" href="{% static 'images/favicon.ico' %}">
 
     <!-- Google Fonts -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
 
     <!-- External CSS -->
-    <link rel="stylesheet" href="{% static 'css/style.css' %}">
-</head>
-<body>
+    <link rel="stylesheet" href="{% static 'css/style.css' %}?v=5.0">
 
-    <div class="container">
+    <!-- Favicon & PWA Icons -->
+    <link rel="shortcut icon" type="image/png" href="{% static 'images/favicon.png' %}">
+    <link rel="icon" type="image/x-icon" href="{% static 'images/favicon.ico' %}">
+    <meta name="theme-color" content="#0066cc">
+    <link rel="manifest" href="{% static 'manifest.json' %}">
+    <link rel="apple-touch-icon" href="{% static 'icons/icon-192.png' %}">
+</head>
+<body class="bg-gradient-to-b from-sky-50/70 via-slate-50 to-slate-100 min-h-screen text-slate-900 font-sans antialiased">
+
+    <div class="max-w-5xl mx-auto px-4 py-6">
         <!-- Navigation Header -->
-        <nav class="nav-bar">
-            <a href="{% if user.is_authenticated %}{% url 'dashboard' %}{% else %}{% url 'home' %}{% endif %}" class="nav-brand" style="display: flex; align-items: center; gap: 8px; text-decoration: none;">
-                <img src="{% static 'images/favicon.png' %}" alt="CheckBite AI Logo" style="width: 32px; height: 32px; object-fit: contain;">
-                <span>CheckBite AI</span>
+        <nav class="bg-white/90 backdrop-blur-md border border-slate-200/80 rounded-2xl px-6 py-3.5 mb-8 shadow-sm flex items-center justify-between flex-wrap gap-4">
+            <a href="{% if user.is_authenticated %}{% url 'dashboard' %}{% else %}{% url 'home' %}{% endif %}" class="flex items-center gap-2.5 group text-decoration-none">
+                <img src="{% static 'images/favicon.png' %}" alt="CheckBite AI Logo" class="w-8 h-8 md:w-9 md:h-9 rounded-xl object-contain shadow-md shadow-sky-500/20 group-hover:scale-105 transition-transform">
+                <span class="text-lg md:text-xl font-black text-slate-900 tracking-tight">CheckBite <span class="text-sky-600">AI</span></span>
             </a>
+
+            <div class="flex items-center gap-1.5 flex-wrap">
+                {% if user.is_authenticated %}
+                    <a href="{% url 'dashboard' %}" class="px-3.5 py-2 rounded-xl text-sm font-semibold text-slate-600 hover:text-slate-900 hover:bg-slate-100 transition-colors">Dashboard</a>
+                    <a href="{% url 'barcode_search' %}" class="px-3.5 py-2 rounded-xl text-sm font-semibold text-slate-600 hover:text-slate-900 hover:bg-slate-100 transition-colors">Scan Product</a>
+                    <a href="{% url 'compare_products' %}" class="px-3.5 py-2 rounded-xl text-sm font-semibold text-slate-600 hover:text-slate-900 hover:bg-slate-100 transition-colors">Compare</a>
+                    <a href="{% url 'saved_products' %}" class="px-3.5 py-2 rounded-xl text-sm font-semibold text-slate-600 hover:text-slate-900 hover:bg-slate-100 transition-colors">Saved</a>
+                    <a href="{% url 'food_insights' %}" class="px-3.5 py-2 rounded-xl text-sm font-semibold text-slate-600 hover:text-slate-900 hover:bg-slate-100 transition-colors">Insights</a>
+                    <a href="{% url 'scan_history' %}" class="px-3.5 py-2 rounded-xl text-sm font-semibold text-slate-600 hover:text-slate-900 hover:bg-slate-100 transition-colors">History</a>
+                    <a href="{% url 'profile' %}" class="px-3.5 py-2 rounded-xl text-sm font-semibold text-slate-600 hover:text-slate-900 hover:bg-slate-100 transition-colors">Profile</a>
+                    <a href="{% url 'logout' %}" class="px-3.5 py-2 rounded-xl text-xs font-bold text-rose-600 bg-rose-50 border border-rose-200 hover:bg-rose-100 transition-colors">Logout ({{ user.username }})</a>
+                {% else %}
+                    <a href="{% url 'home' %}" class="px-3.5 py-2 rounded-xl text-sm font-semibold text-slate-600 hover:text-slate-900 hover:bg-slate-100 transition-colors">Home</a>
+                    <a href="{% url 'login' %}" class="px-3.5 py-2 rounded-xl text-sm font-semibold text-slate-600 hover:text-slate-900 hover:bg-slate-100 transition-colors">Login</a>
+                    <a href="{% url 'signup' %}" class="px-4 py-2 rounded-xl text-sm font-bold text-white bg-sky-600 hover:bg-sky-700 shadow-md shadow-sky-600/20 transition-all">Sign Up</a>
+                {% endif %}
+            </div>
         </nav>
 
         <!-- Offline Container Card -->
-        <div class="card empty-history-card margin-top-md">
-            <div class="empty-icon">📡</div>
-            <h1 class="app-title">You're offline.</h1>
-            <p class="section-desc margin-top-sm">
-                An internet connection is required to scan new products and use AI health analysis.
+        <div class="card empty-history-card bg-white rounded-3xl border border-slate-200/90 p-12 md:p-16 text-center shadow-sm max-w-lg mx-auto my-12">
+            <div class="w-16 h-16 rounded-3xl bg-amber-100 text-amber-600 text-3xl flex items-center justify-center mx-auto mb-4">
+                📡
+            </div>
+            <h1 class="text-2xl md:text-3xl font-extrabold text-slate-900 mb-2">You're Currently Offline</h1>
+            <p class="text-slate-500 text-sm leading-relaxed mb-6">
+                An active internet connection is required to look up barcodes, fetch Open Food Facts nutrition data, and generate Gemini AI health analyses.
             </p>
-            <p class="empty-history-text margin-top-xs">
-                Please reconnect and try again.
-            </p>
-            <div class="margin-top-md">
-                <button type="button" onclick="window.location.reload()" class="btn-primary inline-btn">
+            <div>
+                <button type="button" onclick="window.location.reload()" class="px-8 py-3.5 rounded-xl font-bold bg-sky-600 text-white hover:bg-sky-700 shadow-md shadow-sky-600/20 active:scale-[0.98] transition-all cursor-pointer text-sm inline-flex items-center gap-2">
                     🔄 Try Reconnecting
                 </button>
             </div>
         </div>
 
         <!-- Footer -->
-        <footer class="app-footer">
-            <p>&copy; 2026 CheckBite AI. All rights reserved.</p>
+        <footer class="text-center text-xs text-slate-400 mt-12 mb-6">
+            <p>&copy; 2026 <strong>CheckBite AI</strong>. Empowering Healthier Dietary Choices Every Day.</p>
         </footer>
     </div>
 

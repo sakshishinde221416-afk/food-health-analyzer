@@ -157,6 +157,8 @@ STORAGES = {
     },
 }
 
+WHITENOISE_USE_FINDERS = True
+
 
 # Production Security Settings
 if not DEBUG:

@@ -1,4 +1,4 @@
-const CACHE_NAME = 'food-health-app-v1';
+const CACHE_NAME = 'food-health-app-v3';
 
 // Only static shell assets & offline fallback page are cached
 const STATIC_ASSETS = [
@@ -73,22 +73,20 @@ self.addEventListener('fetch', (event) => {
         return;
     }
 
-    // For static assets (CSS, JS, Manifest, Icons): Stale-while-revalidate / Cache-first
+    // For static assets (CSS, JS, Manifest, Icons): Network-First, fall back to cache
     event.respondWith(
-        caches.match(request).then((cachedResponse) => {
-            if (cachedResponse) {
-                return cachedResponse;
-            }
-            return fetch(request).then((networkResponse) => {
-                // Cache valid static asset responses
-                if (networkResponse && networkResponse.status === 200 && networkResponse.type === 'basic') {
+        fetch(request)
+            .then((networkResponse) => {
+                if (networkResponse && networkResponse.status === 200) {
                     const responseToCache = networkResponse.clone();
                     caches.open(CACHE_NAME).then((cache) => {
                         cache.put(request, responseToCache);
                     });
                 }
                 return networkResponse;
-            });
-        })
+            })
+            .catch(() => {
+                return caches.match(request);
+            })
     );
 });
