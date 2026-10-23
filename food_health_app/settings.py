@@ -35,8 +35,12 @@ allowed_hosts_env = os.getenv('ALLOWED_HOSTS', '127.0.0.1,localhost,*')
 ALLOWED_HOSTS = [host.strip() for host in allowed_hosts_env.split(',') if host.strip()]
 
 csrf_origins = os.getenv('CSRF_TRUSTED_ORIGINS', '')
-if csrf_origins:
-    CSRF_TRUSTED_ORIGINS = [origin.strip() for origin in csrf_origins.split(',') if origin.strip()]
+CSRF_TRUSTED_ORIGINS = [origin.strip() for origin in csrf_origins.split(',') if origin.strip()]
+if 'https://*.onrender.com' not in CSRF_TRUSTED_ORIGINS:
+    CSRF_TRUSTED_ORIGINS.append('https://*.onrender.com')
+render_url = os.getenv('RENDER_EXTERNAL_URL')
+if render_url and render_url not in CSRF_TRUSTED_ORIGINS:
+    CSRF_TRUSTED_ORIGINS.append(render_url)
 
 
 # Application definition
@@ -97,7 +101,7 @@ if DATABASE_URL:
             conn_health_checks=True,
         )
     }
-else:
+elif os.getenv('DB_PASSWORD') or (os.getenv('DB_HOST') and os.getenv('DB_HOST') != 'localhost'):
     DATABASES = {
         'default': {
             'ENGINE': 'django.db.backends.postgresql',
@@ -108,6 +112,15 @@ else:
             'PORT': os.getenv('DB_PORT', '5432'),
         }
     }
+else:
+    # Fallback to SQLite when no PostgreSQL credentials or DATABASE_URL are set
+    DATABASES = {
+        'default': {
+            'ENGINE': 'django.db.backends.sqlite3',
+            'NAME': BASE_DIR / 'db.sqlite3',
+        }
+    }
+
 
 
 # Password validation

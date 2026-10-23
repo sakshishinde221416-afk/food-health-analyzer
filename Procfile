@@ -1,1 +1,1 @@
-web: gunicorn food_health_app.wsgi:application
+web: python manage.py migrate && gunicorn food_health_app.wsgi:application
